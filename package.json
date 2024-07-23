@@ -1,0 +1,32 @@
+{
+  "dependencies": {
+    "-": "^0.0.1",
+    "async": "^3.2.5",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "chai": "^4.3.6",
+    "chai-http": "^4.3.0",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "mocha": "^10.4.0",
+    "mongoose": "^8.4.1",
+    "nodemon": "^3.1.4",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "pino": "^9.2.0",
+    "pino-http": "^10.1.0",
+    "pino-pretty": "^11.2.1"
+  },
+  "scripts": {
+    "test": "mocha tests/index.js --timeout 5000 -s 0 --exit",
+    "backend": "nodemon server.js",
+    "frontend": " cd ../todo-app-frontend && npm run dev",
+    "start": "concurrently \"npm run frontend\" \"npm run backend\""
+  }
+}
+
+
