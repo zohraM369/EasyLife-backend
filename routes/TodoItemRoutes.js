@@ -6,12 +6,12 @@ const DatabaseMiddleware = require("../middlewares/database");
 const router = express.Router();
 
 // Création du endpoint /user pour l'ajout d'un utilisateur
-router.post(
+router.post(  
   "/add_todo_item",
   DatabaseMiddleware.checkConnexion,
   TodoItemController.addOneTodoItem
 );
-
+ 
 router.get('/get_user_todo_items/:id', DatabaseMiddleware.checkConnexion,
   TodoItemController.findTodoItemsByUserId)
 

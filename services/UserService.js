@@ -10,16 +10,35 @@ var User = mongoose.model("User", UserSchema);
 
 User.createIndexes();
 
-
-
-
+module.exports.loginUser = async function (name, password, options, callback) {
+  module.exports.findOneUser(
+    ["name", "email"],
+    name,
+    null,
+    async (err, value) => {
+      if (err) callback(err);
+      else {
+        if (bcrypt.compareSync(password, value.password)) {
+          var token = TokenUtils.createToken({ _id: value._id }, null);
+          callback(null, { ...value, token: token });
+        } else {
+          callback({
+            msg: "La comparaison des mots de passe sont fausses",
+            type_error: "no_comparaison",
+          });
+        }
+      }
+    }
+  );
+};
 
 module.exports.addOneUser = async function (user, options, callback) {
   try {
     const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-    if (user && user.password)
-      //affectation lel object user 
+    if (user && user.password) {
       user.password = await bcrypt.hash(user.password, salt);
+    }
+
     var new_user = new User(user);
     var errors = new_user.validateSync();
     if (errors) {
@@ -44,7 +63,7 @@ module.exports.addOneUser = async function (user, options, callback) {
       };
       callback(err);
     } else {
-      //sauvgarde fi database 
+      //sauvgarde fi database
       await new_user.save();
       callback(null, new_user.toObject());
     }
@@ -60,6 +79,7 @@ module.exports.addOneUser = async function (user, options, callback) {
       };
       callback(err);
     } else {
+      console.log(error);
       callback(error); // Autres erreurs
     }
   }
@@ -72,8 +92,10 @@ module.exports.addManyUsers = async function (users, options, callback) {
   for (var i = 0; i < users.length; i++) {
     var user = users[i];
     const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-    if (user && user.password)
+    if (user && user.password) {
       user.password = await bcrypt.hash(user.password, salt);
+    }
+
     var new_user = new User(user);
     var error = new_user.validateSync();
     if (error) {
@@ -144,7 +166,9 @@ module.exports.findOneUserById = function (user_id, options, callback) {
               type_error: "no-found",
             });
           }
-        } catch (e) {}
+        } catch (e) {
+          console.log(e);
+        }
       })
       .catch((err) => {
         callback({
@@ -156,30 +180,40 @@ module.exports.findOneUserById = function (user_id, options, callback) {
     callback({ msg: "ObjectId non conforme.", type_error: "no-valid" });
   }
 };
-
-module.exports.findManyUsers = function (q, page, limit, options, callback) {
-  page = !page ? 1 : page;
-  limit = !limit ? 1 : limit;
-  page = !Number.isNaN(page) ? Number(page) : page;
-  limit = !Number.isNaN(limit) ? Number(limit) : limit;
-  const queryMongo = q
-    ? {
-        $or: _.map(["firstName", "lastName", "username", "email"], (e) => {
-          return { [e]: { $regex: `^${q}`, $options: "i" } };
-        }),
-      }
-    : {};
-  if (Number.isNaN(page) || Number.isNaN(limit)) {
+module.exports.findManyUsers = function (
+  search,
+  limit,
+  page,
+  options,
+  callback
+) {
+  page = !page ? 1 : parseInt(page);
+  limit = !limit ? 10 : parseInt(limit);
+  if (
+    typeof page !== "number" ||
+    typeof limit !== "number" ||
+    isNaN(page) ||
+    isNaN(limit)
+  ) {
     callback({
-      msg: `format de ${Number.isNaN(page) ? "page" : "limit"} est incorrect`,
+      msg: `format de ${
+        typeof page !== "number" ? "page" : "limit"
+      } est incorrect`,
       type_error: "no-valid",
     });
   } else {
-    User.countDocuments(queryMongo)
+    let query_mongo = search
+      ? {
+          $or: _.map(["name", "phone", "email"], (e) => {
+            return { [e]: { $regex: search } };
+          }),
+        }
+      : {};
+    User.countDocuments(query_mongo)
       .then((value) => {
         if (value > 0) {
           const skip = (page - 1) * limit;
-          User.find(queryMongo, null, { skip: skip, limit: limit }).then(
+          User.find(query_mongo, null, { skip: skip, limit: limit }).then(
             (results) => {
               callback(null, {
                 count: value,
@@ -219,7 +253,9 @@ module.exports.findManyUsersById = function (users_id, options, callback) {
               type_error: "no-found",
             });
           }
-        } catch (e) {}
+        } catch (e) {
+          console.log(e);
+        }
       })
       .catch((err) => {
         callback({
@@ -253,7 +289,7 @@ module.exports.findManyUsersById = function (users_id, options, callback) {
 };
 
 module.exports.findOneUser = function (tab_field, value, options, callback) {
-  var field_unique = ["username", "email"];
+  var field_unique = ["name", "email"];
   if (
     tab_field &&
     Array.isArray(tab_field) &&
@@ -320,8 +356,10 @@ module.exports.updateOneUser = async function (
 ) {
   if (user_id && mongoose.isValidObjectId(user_id)) {
     const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-    if (update && update.password)
+    if (update && update.password) {
       update.password = await bcrypt.hash(update.password, salt);
+    }
+
     User.findByIdAndUpdate(new ObjectId(user_id), update, {
       returnDocument: "after",
       runValidators: true,
@@ -383,7 +421,6 @@ module.exports.updateManyUsers = async function (
   options,
   callback
 ) {
-  //
   if (
     users_id &&
     Array.isArray(users_id) &&
@@ -392,17 +429,16 @@ module.exports.updateManyUsers = async function (
       return mongoose.isValidObjectId(e);
     }).length == users_id.length
   ) {
+    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
+    if (update && update.password) {
+      update.password = await bcrypt.hash(update.password, salt);
+    }
     users_id = users_id.map((e) => {
       return new ObjectId(e);
     });
-    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-    if (update && update.password)
-      update.password = await bcrypt.hash(update.password, salt);
-
     User.updateMany({ _id: users_id }, update, { runValidators: true })
       .then((value) => {
         try {
-          //
           if (value && value.matchedCount != 0) {
             callback(null, value);
           } else {

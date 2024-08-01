@@ -1,54 +1,41 @@
 const passport = require("passport");
 const UserService = require("../services/UserService");
 const LoggerHttp = require("../utils/logger").http;
-const UserSchema = require("../schemas/User");
-const bcrypt = require("bcryptjs");
-const mongoose = require('mongoose') 
-const jwt = require('jsonwebtoken')
-var User = mongoose.model("User", UserSchema);
-
 
 // la fonction pour gerer l'authentificationdepuis passport
-module.exports.loginUser = async function (req, res) {
-  const { email, password } = req.body
-  try {
-    let user = await User.findOne({ email: email })
-    if (!user) {
-      return res.status(500).json({ error: "address email n'existe pas " })
-    }
-
-    bcrypt.compare(password, user.password, (err, isMatch) => {
+module.exports.loginUser = function (req, res, next) {
+  passport.authenticate(
+    "login",
+    { badRequestMessage: "Les champs sont manquants." },
+    async function (err, user) {
       if (err) {
-        console.log(err)
+        res.statusCode = 401;
+        return res.send({
+          msg: "Le nom d'utilisateur ou le mot de passe n'est pas correct",
+          type_error: "no-valid-login",
+        });
       }
-      if (isMatch == true) {
-        const payload = {
-          email: user.email,
-          firstName: user.firstName,
-          id: user._id
+      req.logIn(user, async function (err) {
+        console.log(err);
+        if (err) {
+          res.statusCode = 500;
+          return res.send({
+            msg: "Probleme d'authentification sur le serveur.",
+            type_error: "internal",
+          });
+        } else {
+          return res.send(user);
         }
-        let token = jwt.sign(payload, "secret", { expiresIn: 3600 })
-        res.json({ msg: "connecté avec succes", token: token })
-
-      } else {
-        return res.status(500).json({ error: "mot de passe incorrecte" })
-      }
-    })
-
-
-  } catch (e) {
-    res.status(500).json({ erreur: e })
-  }
-
-
-
+      });
+    }
+  )(req, res, next);
 };
-
 // La fonction permet d'ajouter un utilisateur
 module.exports.addOneUser = function (req, res) {
   LoggerHttp(req, res);
   req.log.info("Création d'un utilisateur");
   UserService.addOneUser(req.body, null, function (err, value) {
+    console.log("ERROR", err);
     if (err && err.type_error == "no found") {
       res.statusCode = 404;
       res.send(err);
@@ -148,11 +135,12 @@ module.exports.findManyUsers = function (req, res) {
   req.log.info("recherche plusieurs utilistaeurs");
   let page = req.query.page;
   let pageSize = req.query.pageSize;
-  let search = req.query.q;
+  let searchValue = req.query.q;
   UserService.findManyUsers(
-    search,
-    page,
+    searchValue,
     pageSize,
+    page,
+
     null,
     function (err, value) {
       if (err && err.type_error == "no-valid") {

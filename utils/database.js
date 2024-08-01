@@ -28,7 +28,7 @@ mongoose.connection.on("close", () =>
 mongoose.connect(
   `mongodb://localhost:27017/${
     process.env.npm_lifecycle_event == "test"
-      ? "CDA_SERVER_TRAINING "
-      : "CDA_SERVER_PRODUCTION"
+      ? "easy_life_test"
+      : "easy_life_prod"
   }`
 );

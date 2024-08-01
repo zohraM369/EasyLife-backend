@@ -1,7 +1,7 @@
+const pretty = require("pino-pretty");
 const fs = require("fs");
 
-const pretty = require("pino-pretty");
-//créé un flux d'ecriture vers un fichier
+// Crée un flux d'écriture vers un fichier
 const logStream = fs.createWriteStream(
   `logs/${new Date()
     .toLocaleString()
@@ -14,9 +14,10 @@ const logStream = fs.createWriteStream(
   { flags: "a" }
 );
 
-//créé un transform stream avec pino-pretty
+// Crée un transform stream avec pino-pretty
 const prettyStream = pretty();
 prettyStream.pipe(logStream);
+
 const pino_http = require("pino-http")(
   process.env.npm_lifecycle_event != "test" ? prettyStream : logStream
 );

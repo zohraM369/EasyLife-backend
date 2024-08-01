@@ -1,29 +1,20 @@
-const { first } = require("lodash");
 const mongoose = require("mongoose");
 
 const UserSchema = mongoose.Schema({
-  firstName: {
+  name: {
     type: String,
     required: true,
   },
-  lastName: {
-    type: String,
-    required: true,
-  },
-  username: {
-    type: String,
-    required: true,
-    unique: true,
 
-    index: true,
-  },
   email: {
     type: String,
     index: true,
     unique: true,
     required: true,
   },
-  phone: String,
+  phone: {
+    type: String,
+  },
   password: {
     type: String,
     required: true,

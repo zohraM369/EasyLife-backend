@@ -1,18 +1,39 @@
 const express = require("express");
 const UserController = require("../controllers/UserController");
-
+const bodyParser = require("body-parser");
 // Déclaration des middlewares
-const DatabaseMiddleware = require("../middlewares/database");
+const Config = require("../config");
 const router = express.Router();
+const passport = require("../utils/passport");
+const DatabaseMiddleware = require("../middlewares/database");
+const LoggerMiddleware = require("../middlewares/Logger");
+var session = require("express-session");
+router.use(
+  session({
+    secret: Config.secret_cookie,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: true },
+  })
+);
 
+router.use(passport.initialize());
+router.use(passport.session());
+
+// passport init
 // Création du endpoint /user pour l'ajout d'un utilisateur
 router.post(
-  "/user",
+  "/register",
   DatabaseMiddleware.checkConnexion,
   UserController.addOneUser
 );
-
-router.post("/login", DatabaseMiddleware.checkConnexion, UserController.loginUser);
+// Déclaration des middlewares à express
+router.use(bodyParser.json(), LoggerMiddleware.addLogger);
+router.post(
+  "/login",
+  DatabaseMiddleware.checkConnexion,
+  UserController.loginUser
+);
 
 // Création du endpoint /user pour l'ajout de plusieurs utilisateurs
 router.post(
@@ -25,13 +46,14 @@ router.post(
 router.get(
   "/user",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.findOneUser
 );
-
 // Création du endpoint /user pour la récupération d'un utilisateur via l'id
 router.get(
   "/user/:id",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.findOneUserById
 );
 
@@ -39,6 +61,7 @@ router.get(
 router.get(
   "/users_by_filter",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.findManyUsers
 );
 
@@ -46,13 +69,14 @@ router.get(
 router.get(
   "/users",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.findManyUsersById
 );
-
 // Création du endpoint /user pour la modification d'un utilisateur
 router.put(
   "/user/:id",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.updateOneUser
 );
 
@@ -60,6 +84,7 @@ router.put(
 router.put(
   "/users",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.updateManyUsers
 );
 
@@ -67,6 +92,7 @@ router.put(
 router.delete(
   "/user/:id",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.deleteOneUser
 );
 
@@ -74,6 +100,7 @@ router.delete(
 router.delete(
   "/users",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.deleteManyUsers
 );
 
