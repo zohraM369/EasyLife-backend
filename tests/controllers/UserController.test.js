@@ -103,8 +103,8 @@ describe("POST - /login", () => {
   it("Authentifier un utilisateur correct. - S", (done) => {
     chai
       .request(server)
-      .post("/login")
-      .send({ name: "dwarfSlayer", password: "1234" })
+      .post("/auth/login")
+      .send({ username: "zohra", password: "1234" })
       .end((err, res) => {
         res.should.have.status(200);
         valid_token = res.body.token;
@@ -114,8 +114,8 @@ describe("POST - /login", () => {
   it("Authentifier un utilisateur incorrect. (username inexistant) - E", (done) => {
     chai
       .request(server)
-      .post("/login")
-      .send({ name: "zdesfrgtyhj", password: "1234" })
+      .post("/auth/login")
+      .send({ username: "zdesfrgtyhj", password: "1234" })
       .end((err, res) => {
         res.should.have.status(401);
         done();
@@ -124,8 +124,8 @@ describe("POST - /login", () => {
   it("Authentifier un utilisateur incorrect. (password incorrect) - E", (done) => {
     chai
       .request(server)
-      .post("/login")
-      .send({ name: "dwarfSlayer", password: "7894" })
+      .post("/auth/login")
+      .send({ username: "dwarfSlayer", password: "7894" })
       .end((err, res) => {
         res.should.have.status(401);
         done();
