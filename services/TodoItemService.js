@@ -10,42 +10,50 @@ TodoItem.createIndexes();
 
 module.exports.addOneTodoItem = async function (data, options, callback) {
   try {
-    console.log(data)
+    console.log(data);
     let new_todoitem = new TodoItem(data);
-    await new_todoitem.save()
-    callback({ msg: "todoitem ajouté avec sucess ! " })
+    await new_todoitem.save();
+    callback({ msg: "todoitem ajouté avec sucess ! " });
   } catch (e) {
-    callback({ error: e })
+    callback({ error: e });
   }
 };
 
-
-
-module.exports.findManyTodoItems = function (q, page, limit, options, callback) {
-  page = !page ? 1 : page;
-  limit = !limit ? 1 : limit;
-  var populate = options && options.populate ? ["user_id"] : [];
-
-  page = !Number.isNaN(page) ? Number(page) : page;
-  limit = !Number.isNaN(limit) ? Number(limit) : limit;
-  const queryMongo = q
-    ? {
-      $or: _.map(["title", "description"], (e) => {
-        return { [e]: { $regex: `^${q}`, $options: "i" } };
-      }),
-    }
-    : {};
-  if (Number.isNaN(page) || Number.isNaN(limit)) {
+module.exports.findManyTodoItems = function (
+  search,
+  limit,
+  page,
+  options,
+  callback
+) {
+  let populate = options && options.populate ? ["user_id"] : [];
+  page = !page ? 1 : parseInt(page);
+  limit = !limit ? 10 : parseInt(limit);
+  if (
+    typeof page !== "number" ||
+    typeof limit !== "number" ||
+    isNaN(page) ||
+    isNaN(limit)
+  ) {
     callback({
-      msg: `format de ${Number.isNaN(page) ? "page" : "limit"} est incorrect`,
+      msg: `format de ${
+        typeof page !== "number" ? "page" : "limit"
+      } est incorrect`,
       type_error: "no-valid",
     });
   } else {
-    TodoItem.countDocuments(queryMongo)
+    let query_mongo = search
+      ? {
+          $or: _.map(["tittle", "description"], (e) => {
+            return { [e]: { $regex: search } };
+          }),
+        }
+      : {};
+    TodoItem.countDocuments(query_mongo)
       .then((value) => {
         if (value > 0) {
           const skip = (page - 1) * limit;
-          TodoItem.find(queryMongo, null, {
+          TodoItem.find(query_mongo, null, {
             skip: skip,
             limit: limit,
             populate: populate,
@@ -61,28 +69,33 @@ module.exports.findManyTodoItems = function (q, page, limit, options, callback) 
         }
       })
       .catch((e) => {
-        console.log(e);
         callback(e);
       });
   }
 };
 
-module.exports.findOneTodoItemById = function (todo_item, options, callback) {
+module.exports.findOneTodoItemById = function (
+  todo_item_id,
+  options,
+  callback
+) {
   var opts = { populate: options && options.populate ? ["user_id"] : [] };
 
-  if (todo_item && mongoose.isValidObjectId(todo_item)) {
-    TodoItem.findById(todo_item, null, opts)
+  if (todo_item_id && mongoose.isValidObjectId(todo_item_id)) {
+    TodoItem.findById(todo_item_id, null, opts)
       .then((value) => {
         try {
           if (value) {
             callback(null, value.toObject());
           } else {
             callback({
-              msg: "Aucun todo_item trouvé.",
+              msg: "Aucun todo_item_id trouvé.",
               type_error: "no-found",
             });
           }
-        } catch (e) { }
+        } catch (e) {
+          console.log(e);
+        }
       })
       .catch((err) => {
         callback({
@@ -95,7 +108,12 @@ module.exports.findOneTodoItemById = function (todo_item, options, callback) {
   }
 };
 
-module.exports.findOneTodoItem = function (tab_field, value, options, callback) {
+module.exports.findOneTodoItem = function (
+  tab_field,
+  value,
+  options,
+  callback
+) {
   var field_unique = ["title", "description"];
   var opts = {
     populate: options && options.populate ? ["user_id"] : [],
@@ -143,11 +161,11 @@ module.exports.findOneTodoItem = function (tab_field, value, options, callback) 
       });
       msg += msg
         ? ` Et (${field_not_authorized.join(
-          ","
-        )}) ne sont pas des champs de recherche autorisé.`
+            ","
+          )}) ne sont pas des champs de recherche autorisé.`
         : `Les champs (${field_not_authorized.join(
-          ","
-        )}) ne sont pas des champs de recherche autorisé.`;
+            ","
+          )}) ne sont pas des champs de recherche autorisé.`;
       callback({
         msg: msg,
         type_error: "no-valid",
@@ -159,15 +177,16 @@ module.exports.findOneTodoItem = function (tab_field, value, options, callback) 
   }
 };
 
-
 module.exports.updateOneTodoItem = function (
-  todo_item,
+  todo_item_id,
   update,
   options,
   callback
 ) {
-  if (todo_item && mongoose.isValidObjectId(todo_item)) {
-    TodoItem.findByIdAndUpdate(new ObjectId(todo_item), update, {
+  update.user_id = options && options.user ? options.user._id : update.user_id;
+  update.updated_at = new Date();
+  if (todo_item_id && mongoose.isValidObjectId(todo_item_id)) {
+    TodoItem.findByIdAndUpdate(new ObjectId(todo_item_id), update, {
       returnDocument: "after",
       runValidators: true,
     })
@@ -177,7 +196,7 @@ module.exports.updateOneTodoItem = function (
           if (value) callback(null, value.toObject());
           else
             callback({
-              msg: "todo_item non trouvé.",
+              msg: "todo_item_id non trouvé.",
               type_error: "no-found",
             });
         } catch (e) {
@@ -222,7 +241,6 @@ module.exports.updateOneTodoItem = function (
   }
 };
 
-
 module.exports.deleteOneTodoItem = function (todo_item_id, options, callback) {
   if (todo_item_id && mongoose.isValidObjectId(todo_item_id)) {
     TodoItem.findByIdAndDelete(todo_item_id)
@@ -248,4 +266,3 @@ module.exports.deleteOneTodoItem = function (todo_item_id, options, callback) {
     callback({ msg: "Id invalide.", type_error: "no-valid" });
   }
 };
-

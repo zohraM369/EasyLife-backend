@@ -8,6 +8,7 @@ var id_to_do_item_valid = "";
 var to_do_items = [];
 var tab_id_to_do_items = [];
 var tab_id_users = [];
+var valid_token = "";
 
 let users = [
   {
@@ -41,6 +42,14 @@ it("Création des utilisateurs fictif", (done) => {
     done();
   });
 });
+
+it("Authentification d'un utilisateur fictif.", (done) => {
+  UserService.loginUser("oui4", "1234", null, function (err, value) {
+    valid_token = value.token;
+    done();
+  });
+});
+
 function rdm_user(tab) {
   let rdm_id = tab[Math.floor(Math.random() * (tab.length - 1))];
   return rdm_id;
@@ -49,26 +58,30 @@ function rdm_user(tab) {
 describe("addOneTodoItem", () => {
   it("to_do_item  correct. - S", () => {
     var to_do_item = {
-      tittle: "rdv",
-      description: "outside",
+      tittle: "test",
+      description: "ceci est une description",
       start_date: "10-10-2020",
       end_date: "10-10-2020",
       user_id: rdm_user(tab_id_users),
     };
     TOdoItemService.addOneTodoItem(to_do_item, null, function (err, value) {
+      console.log(value);
       expect(value).to.be.a("object");
       expect(value).to.haveOwnProperty("_id");
       expect(value).to.haveOwnProperty("user_id");
+      expect(toString(value["user_id"])).to.be.equal(
+        toString(to_do_item.user_id)
+      );
       id_to_do_item_valid = value._id;
       to_do_items.push(value);
     });
   });
   it("Un to_do_item incorrect. (name) - E", () => {
     var to_do_item_no_valid = {
-      description: "outside",
+      user_id: rdm_user(tab_id_users),
+      description: "ceci est une description",
       start_date: "10-10-2020",
       end_date: "10-10-2020",
-      user_id: rdm_user(tab_id_users),
     };
     TOdoItemService.addOneTodoItem(
       to_do_item_no_valid,
@@ -77,8 +90,30 @@ describe("addOneTodoItem", () => {
         expect(err).to.haveOwnProperty("msg");
         expect(err).to.haveOwnProperty("fields_with_error").with.lengthOf(1);
         expect(err).to.haveOwnProperty("fields");
-        expect(err["fields"]).to.haveOwnProperty("name");
+        expect(err["fields"]).to.haveOwnProperty("tittle");
         expect(err["fields"]["tittle"]).to.equal("Path `tittle` is required.");
+      }
+    );
+  });
+  it("to_do_item incorrect. (Description vide) - E", (done) => {
+    var to_do_item_no_valid = {
+      user_id: rdm_user(tab_id_users),
+      description: "",
+      start_date: "10-10-2020",
+      end_date: "10-10-2020",
+    };
+    TOdoItemService.addOneTodoItem(
+      to_do_item_no_valid,
+      null,
+      function (err, value) {
+        expect(err).to.haveOwnProperty("msg");
+        expect(err).to.haveOwnProperty("fields_with_error").with.lengthOf(1);
+        expect(err).to.haveOwnProperty("fields");
+        expect(err["fields"]).to.haveOwnProperty("description");
+        expect(err["fields"]["description"]).to.equal(
+          "Path `description` is required."
+        );
+        done();
       }
     );
   });
