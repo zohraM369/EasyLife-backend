@@ -6,13 +6,13 @@ const mongoose = require("mongoose");
 //   require("./services/UserService.test");
 // });
 
-describe("UserController", () => {
-  require("./controllers/UserController.test");
-});
-
-// describe("TodoItemService", () => {
-//   require("./services/TodoItemService.test");
+// describe("UserController", () => {
+//   require("./controllers/UserController.test");
 // });
+
+describe("TodoItemService", () => {
+  require("./services/TodoItemService.test");
+});
 
 // describe("TodoItemService", () => {
 //   require("./controllers/ToDoItemController.test");
