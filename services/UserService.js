@@ -4,16 +4,17 @@ const async = require("async");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 const bcrypt = require("bcryptjs");
+const TokenUtils = require('../utils/token')
 const SALT_WORK_FACTOR = 10;
 
 var User = mongoose.model("User", UserSchema);
 
 User.createIndexes();
 
-module.exports.loginUser = async function (name, password, options, callback) {
+module.exports.loginUser = async function (username, password, options, callback) {
   module.exports.findOneUser(
-    ["name", "email"],
-    name,
+    ["username"],
+    username,
     null,
     async (err, value) => {
       if (err) callback(err);
@@ -204,7 +205,7 @@ module.exports.findManyUsers = function (
   } else {
     let query_mongo = search
       ? {
-          $or: _.map(["name", "phone", "email"], (e) => {
+          $or: _.map(["username", "phone", "email"], (e) => {
             return { [e]: { $regex: search } };
           }),
         }
@@ -289,7 +290,7 @@ module.exports.findManyUsersById = function (users_id, options, callback) {
 };
 
 module.exports.findOneUser = function (tab_field, value, options, callback) {
-  var field_unique = ["name", "email"];
+  var field_unique = ["username", "email"];
   if (
     tab_field &&
     Array.isArray(tab_field) &&

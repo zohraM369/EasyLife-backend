@@ -15,7 +15,7 @@ describe("POST -/auth/register ", () => {
       .request(server)
       .post("/auth/register")
       .send({
-        name: "dwarfSlayer",
+        username: "dwarfSlayer",
         email: "lutfu.us@gmail.com",
         phone: "123456",
         password: "12345",
@@ -26,7 +26,7 @@ describe("POST -/auth/register ", () => {
         done();
       });
   });
-  it("Ajouter un utilisateur incorrect. (Sans name) - E", (done) => {
+  it("Ajouter un utilisateur incorrect. (Sans username) - E", (done) => {
     chai
       .request(server)
       .post("/auth/register")
@@ -40,12 +40,12 @@ describe("POST -/auth/register ", () => {
         done();
       });
   });
-  it("Ajouter un utilisateur incorrect. (Avec un name existant) - E", (done) => {
+  it("Ajouter un utilisateur incorrect. (Avec un username existant) - E", (done) => {
     chai
       .request(server)
       .post("/auth/register")
       .send({
-        name: "dwarfSlayer",
+        username: "dwarfSlayer",
         email: "lutfu.us@gmail.com",
         phone: "123456",
         password: "12345",
@@ -60,7 +60,7 @@ describe("POST -/auth/register ", () => {
       .request(server)
       .post("/auth/register")
       .send({
-        name: "",
+        username: "",
         email: "lutfu.us@gmail.com",
         phone: "123456",
         password: "12345",
@@ -78,13 +78,13 @@ describe("POST - /users", () => {
       .post("/auth/users")
       .send([
         {
-          name: "zohra",
+          username: "zohra",
           email: "zohra.us@gmail.com",
           phone: "1234567",
           password: "1234",
         },
         {
-          name: "Lara",
+          username: "Lara",
           email: "Lara.us@gmail.com",
           phone: "123456",
           password: "1234",
@@ -104,18 +104,18 @@ describe("POST - /login", () => {
     chai
       .request(server)
       .post("/auth/login")
-      .send({ name: "dwarfSlayer", password: "1234" })
+      .send({ username: "dwarfSlayer", password: "12345" })
       .end((err, res) => {
         res.should.have.status(200);
         valid_token = res.body.token;
         done();
       });
   });
-  it("Authentifier un utilisateur incorrect. (name inexistant) - E", (done) => {
+  it("Authentifier un utilisateur incorrect. (username inexistant) - E", (done) => {
     chai
       .request(server)
       .post("/auth/login")
-      .send({ name: "zdesfrgtyhj", password: "1234" })
+      .send({ username: "zdesfrgtyhj", password: "1234" })
       .end((err, res) => {
         res.should.have.status(401);
         done();
@@ -125,7 +125,7 @@ describe("POST - /login", () => {
     chai
       .request(server)
       .post("/auth/login")
-      .send({ name: "dwarfSlayer", password: "7894" })
+      .send({ username: "dwarfSlayer", password: "7894" })
       .end((err, res) => {
         res.should.have.status(401);
         done();
@@ -184,7 +184,7 @@ describe("GET - /user", () => {
       .request(server)
       .get("/auth/user")
       .auth(valid_token, { type: "bearer" })
-      .query({ fields: ["name"], value: users[0].name })
+      .query({ fields: ["username"], value: users[0].username })
       .end((err, res) => {
         res.should.have.status(200);
         done();
@@ -196,7 +196,7 @@ describe("GET - /user", () => {
       .request(server)
       .get("/auth/user")
       .auth(valid_token, { type: "bearer" })
-      .query({ fields: ["name"], value: users[0].name })
+      .query({ fields: ["phone"], value: users[0].phone })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -208,7 +208,7 @@ describe("GET - /user", () => {
       .request(server)
       .get("/auth/user")
       .auth(valid_token, { type: "bearer" })
-      .query({ value: users[0].name })
+      .query({ value: users[0].username })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -220,7 +220,7 @@ describe("GET - /user", () => {
       .request(server)
       .get("/auth/user")
       .auth(valid_token, { type: "bearer" })
-      .query({ fields: ["name"], value: "" })
+      .query({ fields: ["username"], value: "" })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -243,7 +243,7 @@ describe("GET - /user", () => {
       .request(server)
       .get("/auth/user")
       .auth(valid_token, { type: "bearer" })
-      .query({ fields: ["name"], value: "users[0].name" })
+      .query({ fields: ["username"], value: "users[0].username" })
       .end((err, res) => {
         res.should.have.status(404);
         done();
@@ -254,7 +254,7 @@ describe("GET - /user", () => {
     chai
       .request(server)
       .get("/auth/user")
-      .query({ fields: ["name"], value: users[0].name })
+      .query({ fields: ["username"], value: users[0].username })
       .end((err, res) => {
         res.should.have.status(401);
         done();
@@ -378,7 +378,7 @@ describe("PUT - /user", () => {
       .request(server)
       .put("/auth/user/" + users[0]._id)
       .auth(valid_token, { type: "bearer" })
-      .send({ name: "zohra" })
+      .send({ username: "zohra" })
       .end((err, res) => {
         res.should.have.status(200);
         done();
@@ -390,7 +390,7 @@ describe("PUT - /user", () => {
       .request(server)
       .put("/auth/user/123456789")
       .auth(valid_token, { type: "bearer" })
-      .send({ name: "zohra", email: "Edouard" })
+      .send({ username: "zohra", email: "Edouard" })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -401,7 +401,7 @@ describe("PUT - /user", () => {
     chai
       .request(server)
       .put("/auth/user/66791a552b38d88d8c6e9ee7")
-      .send({ name: "dwarfSlayer", email: "lutfu.us@gmail.com" })
+      .send({ username: "dwarfSlayer", email: "lutfu.us@gmail.com" })
       .end((err, res) => {
         res.should.have.status(404);
         done();
@@ -413,7 +413,7 @@ describe("PUT - /user", () => {
       .request(server)
       .put("/auth/user/" + users[0]._id)
       .auth(valid_token, { type: "bearer" })
-      .send({ name: "", email: "lutfu.us@gmail.com" })
+      .send({ username: "", email: "lutfu.us@gmail.com" })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -425,7 +425,7 @@ describe("PUT - /user", () => {
       .request(server)
       .put("/auth/user/" + users[0]._id)
       .auth(valid_token, { type: "bearer" })
-      .send({ name: users[1].name })
+      .send({ username: users[1].username })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -435,7 +435,7 @@ describe("PUT - /user", () => {
     chai
       .request(server)
       .put("/auth/user/" + users[0]._id)
-      .send({ name: "dwarfSlayer" })
+      .send({ username: "dwarfSlayer" })
       .end((err, res) => {
         res.should.have.status(401);
         done();
@@ -450,7 +450,7 @@ describe("PUT - /users", () => {
       .put("/auth/users")
       .auth(valid_token, { type: "bearer" })
       .query({ id: _.map(users, "_id") })
-      .send({ name: "zohra" })
+      .send({ username: "zohra" })
       .end((err, res) => {
         res.should.have.status(200);
         done();
@@ -463,7 +463,7 @@ describe("PUT - /users", () => {
       .put("/auth/users")
       .auth(valid_token, { type: "bearer" })
       .query({ id: ["267428142", "41452828"] })
-      .send({ name: "zohra" })
+      .send({ username: "zohra" })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -476,7 +476,7 @@ describe("PUT - /users", () => {
       .put("/auth/users")
       .auth(valid_token, { type: "bearer" })
       .query({ id: ["66791a552b38d88d8c6e9ee7", "667980886db560087464d3a7"] })
-      .send({ name: "zohra" })
+      .send({ username: "zohra" })
       .end((err, res) => {
         res.should.have.status(404);
         done();
@@ -489,7 +489,7 @@ describe("PUT - /users", () => {
       .put("/auth/users")
       .auth(valid_token, { type: "bearer" })
       .query({ id: _.map(users, "_id") })
-      .send({ name: "" })
+      .send({ username: "" })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -502,7 +502,7 @@ describe("PUT - /users", () => {
       .put("/auth/users")
       .auth(valid_token, { type: "bearer" })
       .query({ id: _.map(users, "_id") })
-      .send({ name: users[1].name })
+      .send({ username: users[1].username })
       .end((err, res) => {
         res.should.have.status(405);
         done();
@@ -513,7 +513,7 @@ describe("PUT - /users", () => {
       .request(server)
       .put("/auth/users")
       .query({ id: _.map(users, "_id") })
-      .send({ name: "zohra" })
+      .send({ username: "zohra" })
       .end((err, res) => {
         res.should.have.status(401);
         done();

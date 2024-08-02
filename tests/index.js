@@ -18,9 +18,9 @@ describe("UserController", () => {
 //   require("./controllers/ToDoItemController.test");
 // });
 
-// describe("API - Mongo", () => {
-//   it("Puger la db", () => {
-//     if (process.env.npm_lifecycle_event == "test")
-//       mongoose.connection.db.dropDatabase();
-//   });
-// });
+describe("API - Mongo", () => {
+  it("Puger la db", () => {
+    if (process.env.npm_lifecycle_event == "test")
+      mongoose.connection.db.dropDatabase();
+  });
+});

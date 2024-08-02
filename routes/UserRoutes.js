@@ -28,7 +28,7 @@ router.post(
   UserController.addOneUser
 );
 // Déclaration des middlewares à express
-router.use(bodyParser.json(), LoggerMiddleware.addLogger);
+//router.use(bodyParser.json(), LoggerMiddleware.addLogger);
 router.post(
   "/login",
   DatabaseMiddleware.checkConnexion,

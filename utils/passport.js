@@ -14,15 +14,15 @@ passport.use(
   "login",
   new LocalStrategy({ passReqToCallback: true }, function (
     req,
-    name,
+    username,
     password,
     done
   ) {
     // création du systeme de login avec comparaison des mot de passe
     // console.log(username, password)
-    console.log(name, password);
+    console.log(username, password);
     console.log("ok");
-    UserService.loginUser(name, password, null, done);
+    UserService.loginUser(username, password, null, done);
   })
 );
 
