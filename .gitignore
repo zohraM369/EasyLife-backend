@@ -128,9 +128,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
-# phpstorm
-.idea
-
-# macos
-.DS_Store

@@ -58,7 +58,7 @@ function rdm_user(tab) {
 describe("addOneTodoItem", () => {
   it("to_do_item  correct. - S", () => {
     var to_do_item = {
-      tittle: "test",
+      title: "test",
       description: "ceci est une description",
       start_date: "10-10-2020",
       end_date: "10-10-2020",
@@ -76,7 +76,7 @@ describe("addOneTodoItem", () => {
       to_do_items.push(value);
     });
   });
-  it("Un to_do_item incorrect. (name) - E", () => {
+  it("Un to_do_item incorrect. (title) - E", () => {
     var to_do_item_no_valid = {
       user_id: rdm_user(tab_id_users),
       description: "ceci est une description",
@@ -90,8 +90,8 @@ describe("addOneTodoItem", () => {
         expect(err).to.haveOwnProperty("msg");
         expect(err).to.haveOwnProperty("fields_with_error").with.lengthOf(1);
         expect(err).to.haveOwnProperty("fields");
-        expect(err["fields"]).to.haveOwnProperty("tittle");
-        expect(err["fields"]["tittle"]).to.equal("Path `tittle` is required.");
+        expect(err["fields"]).to.haveOwnProperty("title");
+        expect(err["fields"]["title"]).to.equal("Path `title` is required.");
       }
     );
   });
@@ -122,21 +122,23 @@ describe("addOneTodoItem", () => {
 describe("findOneTodoItem", () => {
   it("Chercher un to_do_item par les champs selectionnées. - S", (done) => {
     TOdoItemService.findOneTodoItem(
-      ["tittle", "description"],
-      to_do_items[0].tittle,
+      ["title", "description"],
+      to_do_items[0].title,
       null,
       function (err, value) {
-        expect(value).to.haveOwnProperty("name");
+        console.log(value);
+        expect(value).to.haveOwnProperty("title");
         done();
       }
     );
   });
   it("Chercher un to_do_item avec un champ non autorisé. - E", (done) => {
     TOdoItemService.findOneTodoItem(
-      ["tittle", "description"],
-      to_do_items[0].tittle,
+      ["title", "description"],
+      to_do_items[0].title,
       null,
       function (err, value) {
+        console.log(value);
         expect(err).to.haveOwnProperty("type_error");
         done();
       }
@@ -144,8 +146,8 @@ describe("findOneTodoItem", () => {
   });
   it("Chercher un to_do_item sans tableau de champ. - E", (done) => {
     TOdoItemService.findOneTodoItem(
-      "tittle",
-      to_do_items[0].tittle,
+      "title",
+      to_do_items[0].title,
       null,
       function (err, value) {
         expect(err).to.haveOwnProperty("type_error");
@@ -155,8 +157,8 @@ describe("findOneTodoItem", () => {
   });
   it("Chercher un to_do_item inexistant. - E", (done) => {
     TOdoItemService.findOneTodoItem(
-      ["tittle"],
-      to_do_items[0].tittle,
+      ["title"],
+      to_do_items[0].title,
       null,
       function (err, value) {
         expect(err).to.haveOwnProperty("type_error");
@@ -174,7 +176,7 @@ describe("findOneTodoItemById", () => {
       function (err, value) {
         expect(value).to.be.a("object");
         expect(value).to.haveOwnProperty("_id");
-        expect(value).to.haveOwnProperty("name");
+        expect(value).to.haveOwnProperty("title");
         done();
       }
     );
@@ -193,15 +195,15 @@ describe("updateOneTodoItem", () => {
   it("Modifier un to_do_item correct. - S", (done) => {
     TOdoItemService.updateOneTodoItem(
       id_to_do_item_valid,
-      { tittle: "RDV", description: "entretient" },
+      { title: "RDV", description: "entretient" },
       null,
       function (err, value) {
         //console.log(value);
         expect(value).to.be.a("object");
         expect(value).to.haveOwnProperty("_id");
-        expect(value).to.haveOwnProperty("tittle");
+        expect(value).to.haveOwnProperty("title");
         expect(value).to.haveOwnProperty("description");
-        expect(value["tittle"]).to.be.equal("RDV");
+        expect(value["title"]).to.be.equal("RDV");
         expect(value["description"]).to.be.equal("entretient");
         done();
       }
@@ -210,7 +212,7 @@ describe("updateOneTodoItem", () => {
   it("Modifier un to_do_item avec id incorrect. - E", (done) => {
     TOdoItemService.updateOneTodoItem(
       "1200",
-      { tittle: "RDV", description: "entretient" },
+      { title: "RDV", description: "entretient" },
       null,
       function (err, value) {
         expect(err).to.be.a("object");
@@ -224,15 +226,15 @@ describe("updateOneTodoItem", () => {
   it("Modifier un to_do_item avec des champs requis vide. - E", (done) => {
     TOdoItemService.updateOneTodoItem(
       id_to_do_item_valid,
-      { name: "", description: "meuble" },
+      { title: "", description: "meuble" },
       null,
       function (err, value) {
         expect(value).to.be.undefined;
         expect(err).to.haveOwnProperty("msg");
         expect(err).to.haveOwnProperty("fields_with_error").with.lengthOf(1);
         expect(err).to.haveOwnProperty("fields");
-        expect(err["fields"]).to.haveOwnProperty("name");
-        expect(err["fields"]["name"]).to.equal("Path `name` is required.");
+        expect(err["fields"]).to.haveOwnProperty("title");
+        expect(err["fields"]["title"]).to.equal("Path `title` is required.");
         done();
       }
     );
@@ -248,7 +250,7 @@ describe("deleteOneto_do_item", () => {
         //callback
         expect(value).to.be.a("object");
         expect(value).to.haveOwnProperty("_id");
-        expect(value).to.haveOwnProperty("TITTLE");
+        expect(value).to.haveOwnProperty("title");
         expect(value).to.haveOwnProperty("description");
         done();
       }

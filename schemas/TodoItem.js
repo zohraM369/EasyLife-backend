@@ -1,65 +1,57 @@
-
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 
 const TodoItemSchema = mongoose.Schema({
   user_id: {
     type: ObjectId,
-    ref: "User"
-
+    ref: "User",
   },
   title: {
-    type: String
-
+    type: String,
+    required: true,
   },
   description: {
-    type: String
-
+    type: String,
   },
-  start_date: {
-    type: String
-
-  },
-  end_date: {
-    type: String
-
-  },
-  start_time: {
-    type: String
-
-  },
-  end_time: {
-    type: String
-
-  },
-  completed: {
-    type: Boolean,
-    default: false
-  },
+  team: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   type: {
     type: String,
-    enum: ["indoor", "outdoor"]
   },
+  date: {
+    type: String,
+    required: true,
+  },
+  time: {
+    type: String,
+    require: true,
+  },
+  outside: {
+    type: Boolean,
+  },
+  notes: [String],
   weather: {
-    type: String
+    description: {
+      type: String,
+    },
+    temp: {
+      type: Number,
+    },
+    icon: {
+      type: String,
+    },
   },
   status: {
     type: String,
-    enum: ["coming", "active", "done", "cancelled"]
+    enum: ["coming", "active", "done", "cancelled", "late"],
   },
   created_at: {
     type: Date,
-    default: Date.now(),
-
+    default: Date.now,
   },
   updated_at: {
     type: Date,
-    default: Date.now(),
-
+    default: Date.now,
   },
 });
-
-
-
 
 module.exports = TodoItemSchema;

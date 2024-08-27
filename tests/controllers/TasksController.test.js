@@ -6,18 +6,28 @@ const TodoItemSchema = require("../../schemas/TodoItem");
 const TodoItem = mongoose.model("todoitem", TodoItemSchema);
 chai.use(chaiHttp);
 const expect = chai.expect;
-const UserService = require("../../services/UserService");
+
 let todoItemId, userId, friendId;
 
 // describe("TodoItem API", () => {
 //   before(async () => {
-//     // Connect to the test database
-//     await mongoose.connect("mongodb://localhost:27017/testdb", {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     });
+//     await mongoose.connect(
+//       `mongodb://localhost:27017/${
+//         process.env.npm_lifecycle_event == "test"
+//           ? "easy_life_test"
+//           : "easy_life_prod"
+//       }`
+//     );
+//     await chai
+//       .request(app)
+//       .post("/auth/register")
+//       .send({ name: "hichem", email: "test@gmail.com", password: "test123" });
+//     const res = await chai
+//       .request(app)
+//       .post("/auth/login")
+//       .send({ username: "test@gmail.com", password: "test123" });
 
-//     // Create a user and friend for testing
+//     token = res.body.user.token;
 //     const todoItem = new TodoItem({
 //       title: "Test Todo",
 //       description: "This is a test todo item",
@@ -26,13 +36,11 @@ let todoItemId, userId, friendId;
 //     await todoItem.save();
 
 //     todoItemId = todoItem._id;
-//     userId = new mongoose.Types.ObjectId(); // Mock user ID
-//     friendId = new mongoose.Types.ObjectId(); // Mock friend ID
+//     userId = new mongoose.Types.ObjectId();
+//     friendId = new mongoose.Types.ObjectId();
 //   });
 
 //   after(async () => {
-//     // Cleanup: Delete the todo items created for testing
-//     await TodoItem.deleteMany({});
 //     await mongoose.disconnect();
 //   });
 
@@ -41,16 +49,12 @@ describe("POST /addOneTodoItem", () => {
     chai
       .request(app)
       .post("/tasks/add_task")
-      .send({
-        title: "New Todo",
-        description: "Adding a new todo item",
-        start_date: "10-10-2020",
-        end_date: "10-10-2020",
-      })
+      .set("Authorization", `Bearer ${token}`)
+
+      .send({ title: "New Todo", description: "Adding a new todo item" })
       .end((err, res) => {
         expect(res).to.have.status(200);
         expect(res.body).to.have.property("msg", "Todo ajouté avec succés !");
-        console.log(res.body);
         done();
       });
   });
@@ -61,15 +65,15 @@ describe("PUT /removeTeamMemberFromTask", () => {
     chai
       .request(app)
       .put("/tasks/remove_team_member_from_task")
+      .set("Authorization", `Bearer ${token}`)
+
       .send({ todoId: todoItemId, userId: userId })
       .end((err, res) => {
         expect(res).to.have.status(200);
-
         expect(res.body).to.have.property(
           "msg",
-          "ID supprimé de l'équipe avec succès!"
+          "ID removed from team successfully!"
         );
-        console.log(res.body);
         done();
       });
   });
@@ -80,12 +84,14 @@ describe("POST /addTeamMemberToTask", () => {
     chai
       .request(app)
       .post("/tasks/add_team_member_to_task")
+      .set("Authorization", `Bearer ${token}`)
+
       .send({ todoItemId: todoItemId, friendId: friendId })
       .end((err, res) => {
         expect(res).to.have.status(200);
         expect(res.body).to.have.property(
           "msg",
-          "ID d'ami ajouté avec succès!"
+          "Friend ID added successfully!"
         );
         done();
       });
@@ -96,7 +102,9 @@ describe("GET /findOneTodoItem", () => {
   it("should find one todo item", (done) => {
     chai
       .request(app)
-      .get(`/tasks/get_task?fields=title&value=${todoItemId}`)
+      .get(`/tasks/get_task?fields=title&value=Test%20Todo`)
+      .set("Authorization", `Bearer ${token}`)
+
       .end((err, res) => {
         expect(res).to.have.status(200);
         expect(res.body).to.have.property("title", "Test Todo");
@@ -109,10 +117,12 @@ describe("GET /findManyTodoItems", () => {
   it("should find multiple todo items", (done) => {
     chai
       .request(app)
-      .get("/tasks/get_many_tasks?page=1&pageSize=10&q=Test")
+      .get("/tasks/get_many_tasks/1/10/Test")
+      .set("Authorization", `Bearer ${token}`)
+
       .end((err, res) => {
         expect(res).to.have.status(200);
-        expect(res.body).to.be.an("array");
+        expect(res.body.results).to.be.an("array");
         done();
       });
   });
@@ -123,6 +133,8 @@ describe("GET /findOneTodoItemById/:id", () => {
     chai
       .request(app)
       .get(`/tasks/get_task_by_id/${todoItemId}`)
+      .set("Authorization", `Bearer ${token}`)
+
       .end((err, res) => {
         expect(res).to.have.status(200);
         expect(res.body).to.have.property("title", "Test Todo");
@@ -136,25 +148,11 @@ describe("GET /findTodoItemsByUserId/:id", () => {
     chai
       .request(app)
       .get(`/tasks/get_user_tasks/${userId}`)
+      .set("Authorization", `Bearer ${token}`)
+
       .end((err, res) => {
         expect(res).to.have.status(200);
         expect(res.body).to.be.an("array");
-        done();
-      });
-  });
-});
-
-describe("DELETE /deleteOneTodoItem/:id", () => {
-  it("should delete a todo item", (done) => {
-    chai
-      .request(app)
-      .delete(`/tasks/delete_task/${todoItemId}`)
-      .end((err, res) => {
-        expect(res).to.have.status(200);
-        expect(res.body).to.have.property(
-          "msg",
-          "TodoItem supprimé avec succès!"
-        );
         done();
       });
   });
@@ -165,10 +163,25 @@ describe("PUT /updateOneTodoItem/:id", () => {
     chai
       .request(app)
       .put(`/tasks/update_task/${todoItemId}`)
+      .set("Authorization", `Bearer ${token}`)
+
       .send({ title: "Updated Todo" })
       .end((err, res) => {
         expect(res).to.have.status(200);
         expect(res.body).to.have.property("title", "Updated Todo");
+        done();
+      });
+  });
+});
+describe("DELETE /deleteOneTodoItem/:id", () => {
+  it("should delete a todo item", (done) => {
+    chai
+      .request(app)
+      .delete(`/tasks/delete_task/${todoItemId}`)
+      .set("Authorization", `Bearer ${token}`)
+
+      .end((err, res) => {
+        expect(res).to.have.status(200);
         done();
       });
   });

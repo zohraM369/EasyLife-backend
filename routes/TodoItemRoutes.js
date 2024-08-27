@@ -5,60 +5,71 @@ const TodoItemController = require("../controllers/TodoItemController");
 const DatabaseMiddleware = require("../middlewares/database");
 const router = express.Router();
 
-// Création du endpoint /user pour l'ajout d'un utilisateur
-router.post(  
-  "/add_todo_item",
+// Création du endpoint /user pour l'ajout d'une tache
+router.post(
+  "/add_task",
   DatabaseMiddleware.checkConnexion,
   TodoItemController.addOneTodoItem
 );
- 
-router.get('/get_user_todo_items/:id', DatabaseMiddleware.checkConnexion,
-  TodoItemController.findTodoItemsByUserId)
 
-// Création du endpoint /user pour la récupération d'un utilisateur par le champ selectionné
+router.post(
+  "/add_team_member_to_task",
+  DatabaseMiddleware.checkConnexion,
+  TodoItemController.addTeamMemberToTask
+);
+
+router.put(
+  "/remove_team_member_from_task",
+  DatabaseMiddleware.checkConnexion,
+  TodoItemController.removeTeamMemberFromTask
+);
+
 router.get(
-  "/todo_item",
+  "/get_user_tasks/:id",
+  DatabaseMiddleware.checkConnexion,
+  TodoItemController.findTodoItemsByUserId
+);
+
+// Création du endpoint /task pour la récupération d'une tache par le champ selectionné
+router.get(
+  "/get_task",
   DatabaseMiddleware.checkConnexion,
   TodoItemController.findOneTodoItem
 );
 
-// Création du endpoint /user pour la récupération d'un utilisateur via l'id
+// Création du endpoint /task pour la récupération d'une tache via l'id
 router.get(
-  "/todo_item/:id",
+  "/get_task_by_id/:id",
   DatabaseMiddleware.checkConnexion,
   TodoItemController.findOneTodoItemById
 );
 
-// Création du endpoint /user pour la récupération de plusieurs utilisateurs
+// Création du endpoint /task pour la récupération de plusieurs taches
 router.get(
-  "/todo_items_by_filter",
+  "/get_tasks_by_filter",
   DatabaseMiddleware.checkConnexion,
   TodoItemController.findManyTodoItems
 );
 
-// Création du endpoint /user pour la récupération de plusieurs utilisateurs via l'idS
+// Création du endpoint /task pour la récupération de plusieurs taches via l'idS
 router.get(
-  "/todo_items",
+  "/get_many_tasks/:page/:pageSize/:q",
   DatabaseMiddleware.checkConnexion,
   TodoItemController.findManyTodoItems
 );
 
-// Création du endpoint /user pour la modification d'un utilisateur
+// Création du endpoint /task pour la modification d'une tache
 router.put(
-  "/todo_item/:id",
+  "/update_task/:id",
   DatabaseMiddleware.checkConnexion,
   TodoItemController.updateOneTodoItem
 );
 
-
-
-// Création du endpoint /user pour la suppression d'un utilisateur
+// Création du endpoint /task pour la suppression d'une tache
 router.delete(
-  "/todo_item/:id",
+  "/delete_task/:id",
   DatabaseMiddleware.checkConnexion,
   TodoItemController.deleteOneTodoItem
 );
-
-
 
 module.exports = router;

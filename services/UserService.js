@@ -4,42 +4,187 @@ const async = require("async");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 const bcrypt = require("bcryptjs");
-const TokenUtils = require('../utils/token')
 const SALT_WORK_FACTOR = 10;
-
+const TokenUtils = require("../utils/token");
+const nodemailer = require("nodemailer");
 var User = mongoose.model("User", UserSchema);
 
 User.createIndexes();
 
-module.exports.loginUser = async function (username, password, options, callback) {
-  module.exports.findOneUser(
-    ["username"],
-    username,
-    null,
-    async (err, value) => {
-      if (err) callback(err);
-      else {
-        if (bcrypt.compareSync(password, value.password)) {
-          var token = TokenUtils.createToken({ _id: value._id }, null);
-          callback(null, { ...value, token: token });
-        } else {
-          callback({
-            msg: "La comparaison des mots de passe sont fausses",
-            type_error: "no_comparaison",
-          });
-        }
+module.exports.sendVerificationEmail = async (data) => {
+  const user = await User.findOne({ email: data.email });
+
+  if (!user) {
+    return false;
+  }
+
+  user.verificationCode = data.code;
+  await user.save();
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "nourhb58@gmail.com",
+      pass: "MWDYR8NzHBpO1jgK",
+    },
+  });
+
+  // Email options
+  const mailOptions = {
+    from: "admin@gmail.com",
+    to: data.email,
+    subject: "Alert",
+    html: `<div><h1>Veuillez utiliser ce code :  </h1> <p>${data.code}</p></div>`,
+  };
+
+  // Send the email
+  await transporter.sendMail(mailOptions, function (err, data) {
+    if (err) {
+      console.log("noipe error");
+    } else {
+      console.log("email sent succesuflly");
+      res.send("email sent succesuflly");
+    }
+  });
+
+  return true;
+};
+
+module.exports.sendResetPasswordEmail = async (data) => {
+  let result = { result: false, msg: "", err: null };
+
+  try {
+    const characters =
+      "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let randomCode = "";
+    for (let i = 0; i < 25; i++) {
+      randomCode += characters[Math.floor(Math.random() * characters.length)];
+    }
+
+    const user = await User.findOneAndUpdate(
+      { email: data.email },
+      { resetCode: randomCode },
+      { new: true }
+    );
+
+    if (!user) {
+      result = {
+        result: false,
+        msg: "email d'utilisateur non trouvé",
+        err: "email d'utilisateur non trouvé",
+      };
+      return result;
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp-relay.brevo.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: "nourhb58@gmail.com",
+        pass: "MWDYR8NzHBpO1jgK",
+      },
+    });
+
+    const mailOptions = {
+      from: "admin@gmail.com",
+      to: data.email, // user.email
+      subject: "Alert",
+      html: `
+        <div>
+          <h1>Réinitialisation du mot de passe</h1>
+          <p>Réinitialisez votre mot de passe en cliquant sur le lien suivant :</p>
+          <a href="${process.env.FRONTURL}/reset_password/${randomCode}">Cliquez ici</a>
+        </div>
+      `,
+    };
+
+    // envoie email
+    await transporter.sendMail(mailOptions);
+
+    // Si l'e-mail est envoyé avec succès, mettez à jour le résultat
+    result = { result: true, msg: "Email envoyé avec success!", err: null };
+  } catch (error) {
+    console.error("Error sending reset password email:", error);
+    result = { result: false, msg: null, err: "Failed to send email" };
+  }
+
+  return result;
+};
+
+module.exports.ResetPasswordHandler = async (data) => {
+  let result = { result: false, err: null };
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    if (!salt) throw new Error("Something went wrong with bcrypt");
+
+    const hash = await bcrypt.hash(data.password, salt);
+    if (!hash) throw new Error("Something went wrong hashing the password");
+
+    const user = await User.findOneAndUpdate(
+      { resetCode: data.resetCode },
+      { password: hash },
+      { new: true }
+    );
+
+    if (user) {
+      result.result = true;
+      result.message = "mot de passe mis à jour avec succès !";
+    } else {
+      result.err = "Le code de réinitialisation est faux !";
+    }
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    result.err =
+      error.message ||
+      "Une erreur s'est produite lors de la réinitialisation du mot de passe.";
+  }
+
+  return result;
+};
+
+// Service method to verify the code
+module.exports.verifyCode = async (email, code) => {
+  const user = await User.findOne({ email });
+
+  if (!user || user.verificationCode !== code) {
+    return false;
+  }
+
+  //  si le code est correct, marquez l'utilisateur comme vérifié
+  user.isVerified = true;
+  user.verificationCode = null; //Effacer le code de vérification
+  await user.save();
+
+  return { user: user };
+};
+
+module.exports.loginUser = async function (email, password, options, callback) {
+  module.exports.findOneUser(["email"], email, null, async (err, value) => {
+    if (err) callback(err);
+    else {
+      if (bcrypt.compareSync(password, value.password)) {
+        var token = TokenUtils.createToken({ _id: value._id }, null);
+        callback(null, { ...value, token: token });
+      } else {
+        callback({
+          msg: "La comparaison des mots de passe sont fausses",
+          type_error: "no_comparaison",
+        });
       }
     }
-  );
+  });
 };
 
 module.exports.addOneUser = async function (user, options, callback) {
   try {
     const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-    if (user && user.password) {
+    if (user && user.password)
+      //affectation lel object user
       user.password = await bcrypt.hash(user.password, salt);
-    }
-
     var new_user = new User(user);
     var errors = new_user.validateSync();
     if (errors) {
@@ -64,7 +209,6 @@ module.exports.addOneUser = async function (user, options, callback) {
       };
       callback(err);
     } else {
-      //sauvgarde fi database
       await new_user.save();
       callback(null, new_user.toObject());
     }
@@ -80,7 +224,6 @@ module.exports.addOneUser = async function (user, options, callback) {
       };
       callback(err);
     } else {
-      console.log(error);
       callback(error); // Autres erreurs
     }
   }
@@ -93,10 +236,8 @@ module.exports.addManyUsers = async function (users, options, callback) {
   for (var i = 0; i < users.length; i++) {
     var user = users[i];
     const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-    if (user && user.password) {
+    if (user && user.password)
       user.password = await bcrypt.hash(user.password, salt);
-    }
-
     var new_user = new User(user);
     var error = new_user.validateSync();
     if (error) {
@@ -181,40 +322,30 @@ module.exports.findOneUserById = function (user_id, options, callback) {
     callback({ msg: "ObjectId non conforme.", type_error: "no-valid" });
   }
 };
-module.exports.findManyUsers = function (
-  search,
-  limit,
-  page,
-  options,
-  callback
-) {
-  page = !page ? 1 : parseInt(page);
-  limit = !limit ? 10 : parseInt(limit);
-  if (
-    typeof page !== "number" ||
-    typeof limit !== "number" ||
-    isNaN(page) ||
-    isNaN(limit)
-  ) {
+
+module.exports.findManyUsers = function (q, page, limit, options, callback) {
+  page = !page ? 1 : page;
+  limit = !limit ? 1 : limit;
+  page = !Number.isNaN(page) ? Number(page) : page;
+  limit = !Number.isNaN(limit) ? Number(limit) : limit;
+  const queryMongo = q
+    ? {
+        $or: _.map(["firstName", "lastName", "username", "email"], (e) => {
+          return { [e]: { $regex: `^${q}`, $options: "i" } };
+        }),
+      }
+    : {};
+  if (Number.isNaN(page) || Number.isNaN(limit)) {
     callback({
-      msg: `format de ${
-        typeof page !== "number" ? "page" : "limit"
-      } est incorrect`,
+      msg: `format de ${Number.isNaN(page) ? "page" : "limit"} est incorrect`,
       type_error: "no-valid",
     });
   } else {
-    let query_mongo = search
-      ? {
-          $or: _.map(["username", "phone", "email"], (e) => {
-            return { [e]: { $regex: search } };
-          }),
-        }
-      : {};
-    User.countDocuments(query_mongo)
+    User.countDocuments(queryMongo)
       .then((value) => {
         if (value > 0) {
           const skip = (page - 1) * limit;
-          User.find(query_mongo, null, { skip: skip, limit: limit }).then(
+          User.find(queryMongo, null, { skip: skip, limit: limit }).then(
             (results) => {
               callback(null, {
                 count: value,
@@ -254,9 +385,7 @@ module.exports.findManyUsersById = function (users_id, options, callback) {
               type_error: "no-found",
             });
           }
-        } catch (e) {
-          console.log(e);
-        }
+        } catch (e) {}
       })
       .catch((err) => {
         callback({
@@ -357,10 +486,8 @@ module.exports.updateOneUser = async function (
 ) {
   if (user_id && mongoose.isValidObjectId(user_id)) {
     const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-    if (update && update.password) {
+    if (update && update.password)
       update.password = await bcrypt.hash(update.password, salt);
-    }
-
     User.findByIdAndUpdate(new ObjectId(user_id), update, {
       returnDocument: "after",
       runValidators: true,
@@ -422,6 +549,7 @@ module.exports.updateManyUsers = async function (
   options,
   callback
 ) {
+  //
   if (
     users_id &&
     Array.isArray(users_id) &&
@@ -430,16 +558,17 @@ module.exports.updateManyUsers = async function (
       return mongoose.isValidObjectId(e);
     }).length == users_id.length
   ) {
-    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
-    if (update && update.password) {
-      update.password = await bcrypt.hash(update.password, salt);
-    }
     users_id = users_id.map((e) => {
       return new ObjectId(e);
     });
+    const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
+    if (update && update.password)
+      update.password = await bcrypt.hash(update.password, salt);
+
     User.updateMany({ _id: users_id }, update, { runValidators: true })
       .then((value) => {
         try {
+          //
           if (value && value.matchedCount != 0) {
             callback(null, value);
           } else {
@@ -492,29 +621,25 @@ module.exports.updateManyUsers = async function (
 };
 
 module.exports.deleteOneUser = function (user_id, options, callback) {
-  if (user_id && mongoose.isValidObjectId(user_id)) {
-    User.findByIdAndDelete(user_id)
-      .then((value) => {
-        try {
-          if (value) callback(null, value.toObject());
-          else
-            callback({
-              msg: "Utilisateur non trouvé.",
-              type_error: "no-found",
-            });
-        } catch (e) {
-          callback(e);
-        }
-      })
-      .catch((e) => {
-        callback({
-          msg: "Impossible de chercher l'élément.",
-          type_error: "error-mongo",
-        });
+  User.findOneAndDelete({ _id: user_id })
+    .then((value) => {
+      try {
+        if (value) callback(null, value.toObject());
+        else
+          callback({
+            msg: "Utilisateur non trouvé.",
+            type_error: "no-found",
+          });
+      } catch (e) {
+        callback(e);
+      }
+    })
+    .catch((e) => {
+      callback({
+        msg: "Impossible de chercher l'élément.",
+        type_error: "error-mongo",
       });
-  } else {
-    callback({ msg: "Id invalide.", type_error: "no-valid" });
-  }
+    });
 };
 
 module.exports.deleteManyUsers = function (users_id, options, callback) {

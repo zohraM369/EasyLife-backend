@@ -1,13 +1,14 @@
 const express = require("express");
 const UserController = require("../controllers/UserController");
-const bodyParser = require("body-parser");
-// Déclaration des middlewares
-const Config = require("../config");
-const router = express.Router();
 const passport = require("../utils/passport");
+const Config = require("../config");
+
+// Middlewares
 const DatabaseMiddleware = require("../middlewares/database");
-const LoggerMiddleware = require("../middlewares/Logger");
+const upload = require("../middlewares/upload");
+const router = express.Router();
 var session = require("express-session");
+
 router.use(
   session({
     secret: Config.secret_cookie,
@@ -20,88 +21,100 @@ router.use(
 router.use(passport.initialize());
 router.use(passport.session());
 
-// passport init
-// Création du endpoint /user pour l'ajout d'un utilisateur
+// User Registration and Login
 router.post(
   "/register",
   DatabaseMiddleware.checkConnexion,
   UserController.addOneUser
 );
-// Déclaration des middlewares à express
-//router.use(bodyParser.json(), LoggerMiddleware.addLogger);
+
 router.post(
   "/login",
   DatabaseMiddleware.checkConnexion,
   UserController.loginUser
 );
 
-// Création du endpoint /user pour l'ajout de plusieurs utilisateurs
+router.post(
+  "/verifyCode",
+  DatabaseMiddleware.checkConnexion,
+  UserController.verifyCode
+);
+
+router.post(
+  "/send_reset_email",
+  DatabaseMiddleware.checkConnexion,
+  UserController.sendResetEmail
+);
+
+router.post(
+  "/reset_password",
+  DatabaseMiddleware.checkConnexion,
+  UserController.ResetPasswordHandler
+);
+
+
+router.post(
+  "/sendEmail",
+  DatabaseMiddleware.checkConnexion,
+  UserController.sendVerificationEmail
+);
+// User Updates
+router.put(
+  "/update_email",
+  DatabaseMiddleware.checkConnexion,
+  UserController.updateEmail
+);
+
+router.put(
+  "/update_user_image",
+  DatabaseMiddleware.checkConnexion,
+  upload.single('profileImage'),
+  UserController.updateUserImage
+);
+
+router.put(
+  "/update_password",
+  DatabaseMiddleware.checkConnexion,
+  UserController.updatePassword
+);
+
+router.put(
+  "/update_name",
+  DatabaseMiddleware.checkConnexion,
+  UserController.updateName
+);
+
+router.put(
+  "/update_city",
+  DatabaseMiddleware.checkConnexion,
+  UserController.updateCity
+);
+
+// Add Multiple Users
 router.post(
   "/users",
   DatabaseMiddleware.checkConnexion,
   UserController.addManyUsers
 );
 
-// Création du endpoint /user pour la récupération d'un utilisateur par le champ selectionné
+// Find Users by Field or ID
 router.get(
   "/user",
   DatabaseMiddleware.checkConnexion,
-  passport.authenticate("jwt", { session: false }),
   UserController.findOneUser
 );
-// Création du endpoint /user pour la récupération d'un utilisateur via l'id
+
 router.get(
   "/user/:id",
   DatabaseMiddleware.checkConnexion,
-  passport.authenticate("jwt", { session: false }),
   UserController.findOneUserById
 );
 
-// Création du endpoint /user pour la récupération de plusieurs utilisateurs
-router.get(
-  "/users_by_filter",
-  DatabaseMiddleware.checkConnexion,
-  passport.authenticate("jwt", { session: false }),
-  UserController.findManyUsers
-);
 
-// Création du endpoint /user pour la récupération de plusieurs utilisateurs via l'idS
-router.get(
-  "/users",
-  DatabaseMiddleware.checkConnexion,
-  passport.authenticate("jwt", { session: false }),
-  UserController.findManyUsersById
-);
-// Création du endpoint /user pour la modification d'un utilisateur
-router.put(
-  "/user/:id",
-  DatabaseMiddleware.checkConnexion,
-  passport.authenticate("jwt", { session: false }),
-  UserController.updateOneUser
-);
-
-// Création du endpoint /user pour la modification de plusieurs utilisateurs
-router.put(
-  "/users",
-  DatabaseMiddleware.checkConnexion,
-  passport.authenticate("jwt", { session: false }),
-  UserController.updateManyUsers
-);
-
-// Création du endpoint /user pour la suppression d'un utilisateur
 router.delete(
-  "/user/:id",
+  "/delete_user/:id",
   DatabaseMiddleware.checkConnexion,
-  passport.authenticate("jwt", { session: false }),
   UserController.deleteOneUser
-);
-
-// Création du endpoint /user pour la suppression de plusieurs utilisateurs
-router.delete(
-  "/users",
-  DatabaseMiddleware.checkConnexion,
-  passport.authenticate("jwt", { session: false }),
-  UserController.deleteManyUsers
 );
 
 module.exports = router;
