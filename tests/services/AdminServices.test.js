@@ -46,9 +46,27 @@ describe('AdminService', () => {
         user2Id = user2._id;
 
         await TodoItem.create([
-            { title: 'Task 1', status: 'done', type: 'sport' },
-            { title: 'Task 2', status: 'active', type: 'education' },
-            { title: 'Task 3', status: 'done', type: 'sport' },
+          {
+            title: "Task 1",
+            status: "done",
+            type: "sport",
+            date: "27/08/2024",
+            time: "10h30",
+          },
+          {
+            title: "Task 2",
+            status: "active",
+            type: "education",
+            date: "27/08/2024",
+            time: "12h30",
+          },
+          {
+            title: "Task 3",
+            status: "done",
+            type: "sport",
+            date: "27/08/2024",
+            time: "16h30",
+          },
         ]);
 
         await LoginEvent.create({ userId: user1Id, loginTime: new Date() });

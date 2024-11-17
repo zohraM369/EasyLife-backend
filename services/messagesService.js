@@ -65,7 +65,6 @@ class MessageService {
 
       .populate("user_id")
       .populate("recipientId");
-    // .distinct("sender")
 
     return data;
   }

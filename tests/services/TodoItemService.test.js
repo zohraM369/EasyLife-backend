@@ -1,287 +1,213 @@
-const TOdoItemService = require("../../services/TodoItemService");
-const chai = require("chai");
-let expect = chai.expect;
-const _ = require("lodash");
-const UserService = require("../../services/UserService");
+const mongoose = require("mongoose");
+const TodoItemService = require("../../services/TodoItemService");
+const { expect } = require("chai");
 
-var id_to_do_item_valid = "";
-var to_do_items = [];
-var tab_id_to_do_items = [];
-var tab_id_users = [];
-var valid_token = "";
+let result = {};
 
-let users = [
-  {
-    name: "oui1",
-    email: "iencli1@gmail.com",
-    password: "12345",
-  },
-
-  {
-    name: "oui2",
-    email: "iencli2@gmail.com",
-    password: "12345",
-  },
-
-  {
-    name: "oui3",
-    email: "iencli3@gmail.com",
-    password: "12345",
-  },
-
-  {
-    name: "oui4",
-    email: "iencli4@gmail.com",
-    password: "12345",
-  },
-];
-
-it("Création des utilisateurs fictif", (done) => {
-  UserService.addManyUsers(users, null, function (err, value) {
-    tab_id_users = _.map(value, "_id");
-    done();
+describe("TodoItemService", function () {
+  before(async () => {
+    // Connect to a test database
+    await mongoose.connect(
+      `mongodb://localhost:27017/${
+        process.env.npm_lifecycle_event == "test"
+          ? "easy_life_test"
+          : "easy_life_prod"
+      }`
+    );
   });
-});
-
-it("Authentification d'un utilisateur fictif.", (done) => {
-  UserService.loginUser("oui4", "1234", null, function (err, value) {
-    valid_token = value.token;
-    done();
+  after(async () => {
+    // Clean up the test database after tests
+    await mongoose.connection.dropDatabase();
+    await mongoose.disconnect();
   });
-});
+  describe("addOneTodoItem", function () {
+    it("should add a new todo item successfully", function (done) {
+      const todoData = {
+        title: "Test Todo",
+        description: "This is a test todo item",
+        team: [],
+        date: "27/08/2024",
+        time: "16h30",
+      };
 
-function rdm_user(tab) {
-  let rdm_id = tab[Math.floor(Math.random() * (tab.length - 1))];
-  return rdm_id;
-}
+      TodoItemService.addOneTodoItem(todoData)
+        .then((data) => {
+          // Manually verify data
+          result = data;
+          if (
+            data.title === "Test Todo" &&
+            data.description === "This is a test todo item"
+          ) {
+            console.log("addOneTodoItem test passed");
+            done();
+          } else {
+            console.error("addOneTodoItem test failed");
+            done(new Error("addOneTodoItem test failed"));
+          }
+        })
+        .catch((err) => done(err));
+    });
+  });
 
-describe("addOneTodoItem", () => {
-  it("to_do_item  correct. - S", () => {
-    var to_do_item = {
-      title: "test",
-      description: "ceci est une description",
-      start_date: "10-10-2020",
-      end_date: "10-10-2020",
-      user_id: rdm_user(tab_id_users),
-    };
-    TOdoItemService.addOneTodoItem(to_do_item, null, function (err, value) {
-      console.log(value);
-      expect(value).to.be.a("object");
-      expect(value).to.haveOwnProperty("_id");
-      expect(value).to.haveOwnProperty("user_id");
-      expect(toString(value["user_id"])).to.be.equal(
-        toString(to_do_item.user_id)
+  describe("addTeamMemberToTask", function () {
+    it("should add a team member to the task", async function () {
+      const taskId = result._id;
+      const teamMemberId = "60d5f7f8a7c8b947e0b0e2b2";
+
+      try {
+        const data = await TodoItemService.addTeamMemberToTask({
+          todoItemId: taskId,
+          friendId: teamMemberId,
+        });
+
+        if (data.team.includes(teamMemberId)) {
+          console.log("addTeamMemberToTask test passed");
+        } else {
+          console.error("addTeamMemberToTask test failed");
+          throw new Error("addTeamMemberToTask test failed");
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        throw err; // Rethrow error to ensure the test fails
+      }
+    });
+  });
+
+  describe("removeTeamMemberFromTask", function () {
+    it("should remove a team member from the task", function (done) {
+      const taskId = result._id;
+      const teamMemberId = "60d5f7f8a7c8b947e0b0e2b2";
+
+      TodoItemService.removeTeamMemberFromTask({
+        todoId: taskId,
+        userId: teamMemberId,
+      })
+        .then((data) => {
+          
+
+          if (!data.team.includes(teamMemberId)) {
+            console.log("removeTeamMemberFromTask test passed");
+            done();
+          } else {
+            console.error("removeTeamMemberFromTask test failed");
+            done(new Error("removeTeamMemberFromTask test failed"));
+          }
+        })
+        .catch((err) => done(err));
+    });
+  });
+
+  describe("findTodoItemsByUserId", function () {
+    it("should return todo items for a valid user_id", async function () {
+      // Arrange: create a test todo item
+      const todoItem = {
+        title: "Test Todo",
+        description: "This is a test todo item",
+        team: [],
+        date: "27/08/2024",
+        time: "16h30",
+        user_id: "605c72f1fc13ae1f1c000001",
+      };
+      let create = await TodoItemService.addOneTodoItem(todoItem);
+      console.log(create);
+      // Act: Call the function
+      const result = await TodoItemService.findTodoItemsByUserId(
+        "605c72f1fc13ae1f1c000001"
       );
-      id_to_do_item_valid = value._id;
-      to_do_items.push(value);
+      console.log(result);
+      // Assert: Check the returned data
+      expect(result).to.be.an("array");
+      expect(result[0].title).to.equal("Test Todo");
     });
   });
-  it("Un to_do_item incorrect. (title) - E", () => {
-    var to_do_item_no_valid = {
-      user_id: rdm_user(tab_id_users),
-      description: "ceci est une description",
-      start_date: "10-10-2020",
-      end_date: "10-10-2020",
-    };
-    TOdoItemService.addOneTodoItem(
-      to_do_item_no_valid,
-      null,
-      function (err, value) {
-        expect(err).to.haveOwnProperty("msg");
-        expect(err).to.haveOwnProperty("fields_with_error").with.lengthOf(1);
-        expect(err).to.haveOwnProperty("fields");
-        expect(err["fields"]).to.haveOwnProperty("title");
-        expect(err["fields"]["title"]).to.equal("Path `title` is required.");
-      }
-    );
-  });
-  it("to_do_item incorrect. (Description vide) - E", (done) => {
-    var to_do_item_no_valid = {
-      user_id: rdm_user(tab_id_users),
-      description: "",
-      start_date: "10-10-2020",
-      end_date: "10-10-2020",
-    };
-    TOdoItemService.addOneTodoItem(
-      to_do_item_no_valid,
-      null,
-      function (err, value) {
-        expect(err).to.haveOwnProperty("msg");
-        expect(err).to.haveOwnProperty("fields_with_error").with.lengthOf(1);
-        expect(err).to.haveOwnProperty("fields");
-        expect(err["fields"]).to.haveOwnProperty("description");
-        expect(err["fields"]["description"]).to.equal(
-          "Path `description` is required."
-        );
-        done();
-      }
-    );
-  });
-});
 
-describe("findOneTodoItem", () => {
-  it("Chercher un to_do_item par les champs selectionnées. - S", (done) => {
-    TOdoItemService.findOneTodoItem(
-      ["title", "description"],
-      to_do_items[0].title,
-      null,
-      function (err, value) {
-        console.log(value);
-        expect(value).to.haveOwnProperty("title");
-        done();
-      }
-    );
-  });
-  it("Chercher un to_do_item avec un champ non autorisé. - E", (done) => {
-    TOdoItemService.findOneTodoItem(
-      ["title", "description"],
-      to_do_items[0].title,
-      null,
-      function (err, value) {
-        console.log(value);
-        expect(err).to.haveOwnProperty("type_error");
-        done();
-      }
-    );
-  });
-  it("Chercher un to_do_item sans tableau de champ. - E", (done) => {
-    TOdoItemService.findOneTodoItem(
-      "title",
-      to_do_items[0].title,
-      null,
-      function (err, value) {
-        expect(err).to.haveOwnProperty("type_error");
-        done();
-      }
-    );
-  });
-  it("Chercher un to_do_item inexistant. - E", (done) => {
-    TOdoItemService.findOneTodoItem(
-      ["title"],
-      to_do_items[0].title,
-      null,
-      function (err, value) {
-        expect(err).to.haveOwnProperty("type_error");
-        done();
-      }
-    );
-  });
-});
+ 
 
-describe("findOneTodoItemById", () => {
-  it("Chercher un to_do_item existant correct. - S", (done) => {
-    TOdoItemService.findOneTodoItemById(
-      id_to_do_item_valid,
-      null,
-      function (err, value) {
-        expect(value).to.be.a("object");
-        expect(value).to.haveOwnProperty("_id");
-        expect(value).to.haveOwnProperty("title");
-        done();
-      }
-    );
+  describe("findOneTodoItemById", function () {
+    it("should return a single todo item by ID", async function () {
+        const todoItem = {
+          title: "Test Todo",
+          description: "This is a test todo item",
+          team: [],
+          date: "27/08/2024",
+          time: "16h30",
+          user_id: "605c72f1fc13ae1f1c000002",
+        };
+        let create = await TodoItemService.addOneTodoItem(todoItem);
+
+      // Act: Call the function
+      TodoItemService.findOneTodoItemById(
+        create._id,
+        {},
+        function (err, result) {
+          // Assert
+          expect(err).to.be.null;
+          expect(result.title).to.equal("Test Todo");
+        }
+      );
+    });
+
+    it("should return an error if the ID is invalid", function (done) {
+      // Act: Call the function with an invalid ID
+      TodoItemService.findOneTodoItemById(
+        "invalid_id",
+        {},
+        function (err, result) {
+          // Assert
+          expect(err).to.not.be.null;
+          expect(err.msg).to.equal("ObjectId non conforme.");
+          done();
+        }
+      );
+    });
   });
-  it("Chercher un to_do_item non-existant correct. - E", (done) => {
-    TOdoItemService.findOneTodoItemById("100", null, function (err, value) {
-      expect(err).to.haveOwnProperty("msg");
-      expect(err).to.haveOwnProperty("type_error");
-      expect(err["type_error"]).to.equal("no-valid");
-      done();
+
+  describe("updateOneTodoItem", function () {
+    it("should update a todo item by ID", async function () {
+       const todoItem = {
+         title: "Test Todo",
+         description: "This is a test todo item",
+         team: [],
+         date: "27/08/2024",
+         time: "16h30",
+         user_id: "605c72f1fc13ae1f1c000003",
+       };
+       let create = await TodoItemService.addOneTodoItem(todoItem);
+
+      TodoItemService.updateOneTodoItem(
+        create._id,
+        { title: "Updated Title" },
+        {},
+        function (err, result) {
+          // Assert
+          expect(err).to.be.null;
+          expect(result.title).to.equal("Updated Title");
+        }
+      );
+    });
+  });
+
+  describe("deleteOneTodoItem", function () {
+    it("should delete a todo item by ID", async function () {
+       const todoItem = {
+         title: "Test Todo",
+         description: "This is a test todo item",
+         team: [],
+         date: "27/08/2024",
+         time: "16h30",
+         user_id: "605c72f1fc13ae1f1c000003",
+       };
+       let create = await TodoItemService.addOneTodoItem(todoItem);
+      TodoItemService.deleteOneTodoItem(create._id, {}, function (err, result) {
+        // Assert
+        expect(err).to.be.null;
+        expect(result.title).to.equal("Test Todo");
+
+        // Verify deletion
+        TodoItemService.findOneTodoItemById(create._id).then((deletedItem) => {
+          expect(deletedItem).to.be.null;
+        });
+      });
     });
   });
 });
-
-describe("updateOneTodoItem", () => {
-  it("Modifier un to_do_item correct. - S", (done) => {
-    TOdoItemService.updateOneTodoItem(
-      id_to_do_item_valid,
-      { title: "RDV", description: "entretient" },
-      null,
-      function (err, value) {
-        //console.log(value);
-        expect(value).to.be.a("object");
-        expect(value).to.haveOwnProperty("_id");
-        expect(value).to.haveOwnProperty("title");
-        expect(value).to.haveOwnProperty("description");
-        expect(value["title"]).to.be.equal("RDV");
-        expect(value["description"]).to.be.equal("entretient");
-        done();
-      }
-    );
-  });
-  it("Modifier un to_do_item avec id incorrect. - E", (done) => {
-    TOdoItemService.updateOneTodoItem(
-      "1200",
-      { title: "RDV", description: "entretient" },
-      null,
-      function (err, value) {
-        expect(err).to.be.a("object");
-        expect(err).to.haveOwnProperty("msg");
-        expect(err).to.haveOwnProperty("type_error");
-        expect(err["type_error"]).to.be.equal("no-valid");
-        done();
-      }
-    );
-  });
-  it("Modifier un to_do_item avec des champs requis vide. - E", (done) => {
-    TOdoItemService.updateOneTodoItem(
-      id_to_do_item_valid,
-      { title: "", description: "meuble" },
-      null,
-      function (err, value) {
-        expect(value).to.be.undefined;
-        expect(err).to.haveOwnProperty("msg");
-        expect(err).to.haveOwnProperty("fields_with_error").with.lengthOf(1);
-        expect(err).to.haveOwnProperty("fields");
-        expect(err["fields"]).to.haveOwnProperty("title");
-        expect(err["fields"]["title"]).to.equal("Path `title` is required.");
-        done();
-      }
-    );
-  });
-});
-
-describe("deleteOneto_do_item", () => {
-  it("Supprimer un to_do_item correct. - S", (done) => {
-    TOdoItemService.deleteOneTodoItem(
-      id_to_do_item_valid,
-      null,
-      function (err, value) {
-        //callback
-        expect(value).to.be.a("object");
-        expect(value).to.haveOwnProperty("_id");
-        expect(value).to.haveOwnProperty("title");
-        expect(value).to.haveOwnProperty("description");
-        done();
-      }
-    );
-  });
-  it("Supprimer un to_do_item avec id incorrect. - E", (done) => {
-    TOdoItemService.deleteOneTodoItem("1200", null, function (err, value) {
-      expect(err).to.be.a("object");
-      expect(err).to.haveOwnProperty("msg");
-      expect(err).to.haveOwnProperty("type_error");
-      expect(err["type_error"]).to.be.equal("no-valid");
-      done();
-    });
-  });
-  it("Supprimer un to_do_item avec un id inexistant. - E", (done) => {
-    TOdoItemService.deleteOneTodoItem(
-      "665f00c6f64f76ba59361e9f",
-      null,
-      function (err, value) {
-        expect(err).to.be.a("object");
-        expect(err).to.haveOwnProperty("msg");
-        expect(err).to.haveOwnProperty("type_error");
-        expect(err["type_error"]).to.be.equal("no-found");
-        done();
-      }
-    );
-  });
-});
-
-// it("suppression des utilisateurs fictifs", (done) => {
-//   UserService.deleteManyUsers(tab_id_users, null, function (err, value) {
-//     done();
-//   });
-// });

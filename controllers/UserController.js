@@ -14,7 +14,7 @@ module.exports.sendResetEmail = async (req, res) => {
     let result = await UserService.sendResetPasswordEmail(req.body);
     console.log(result);
     if (result.result) {
-      return res.json(result);
+      return res.status(200).json(result);
     } else {
       return res.json(result);
     }
@@ -38,8 +38,7 @@ module.exports.ResetPasswordHandler = async (req, res) => {
 };
 
 module.exports.sendVerificationEmail = async (req, res) => {
-  const { email, code } = req.body;
-  console.log(req.body);
+
   try {
     const result = await UserService.sendVerificationEmail(req.body);
     if (result) {
@@ -73,6 +72,8 @@ module.exports.verifyCode = async (req, res) => {
     return res.status(500).json({ msg: "Failed to verify code" });
   }
 };
+
+
 
 module.exports.updateEmail = async function (req, res) {
   const { userId, newEmail, password } = req.body;
@@ -207,7 +208,7 @@ module.exports.updateUserImage = async function (req, res) {
       user.image = `/uploads/${req.file.filename}`;
       await user.save();
       res.json({
-        message: "image profile a été mis a jour avec succes ! ",
+        message: "image profile a été mis a jour avec succes !",
         user: user,
       });
     } else {

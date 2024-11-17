@@ -1,55 +1,25 @@
 const UserSchema = require("../schemas/User");
 const _ = require("lodash");
-const async = require("async");
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 const bcrypt = require("bcryptjs");
 const SALT_WORK_FACTOR = 10;
 const TokenUtils = require("../utils/token");
-const nodemailer = require("nodemailer");
+const emailServices = require("./emailServices");
 var User = mongoose.model("User", UserSchema);
-
-User.createIndexes();
 
 module.exports.sendVerificationEmail = async (data) => {
   const user = await User.findOne({ email: data.email });
 
-  if (!user) {
+  if (user == null || user == undefined) {
     return false;
   }
 
   user.verificationCode = data.code;
   await user.save();
 
-  const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: "nourhb58@gmail.com",
-      pass: "MWDYR8NzHBpO1jgK",
-    },
-  });
-
-  // Email options
-  const mailOptions = {
-    from: "admin@gmail.com",
-    to: data.email,
-    subject: "Alert",
-    html: `<div><h1>Veuillez utiliser ce code :  </h1> <p>${data.code}</p></div>`,
-  };
-
-  // Send the email
-  await transporter.sendMail(mailOptions, function (err, data) {
-    if (err) {
-      console.log("noipe error");
-    } else {
-      console.log("email sent succesuflly");
-      res.send("email sent succesuflly");
-    }
-  });
-
-  return true;
+  await emailServices.sendVerificationCode(data);
+  return true
 };
 
 module.exports.sendResetPasswordEmail = async (data) => {
@@ -78,34 +48,18 @@ module.exports.sendResetPasswordEmail = async (data) => {
       return result;
     }
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: "nourhb58@gmail.com",
-        pass: "MWDYR8NzHBpO1jgK",
-      },
+    await emailServices.sendResetPasswordEmail({
+      email: data.email,
+      randomCode: randomCode,
     });
 
-    const mailOptions = {
-      from: "admin@gmail.com",
-      to: data.email, // user.email
-      subject: "Alert",
-      html: `
-        <div>
-          <h1>Réinitialisation du mot de passe</h1>
-          <p>Réinitialisez votre mot de passe en cliquant sur le lien suivant :</p>
-          <a href="${process.env.FRONTURL}/reset_password/${randomCode}">Cliquez ici</a>
-        </div>
-      `,
-    };
-
-    // envoie email
-    await transporter.sendMail(mailOptions);
-
     // Si l'e-mail est envoyé avec succès, mettez à jour le résultat
-    result = { result: true, msg: "Email envoyé avec success!", err: null };
+    result = {
+      result: true,
+      msg: "Email envoyé avec success!",
+      err: null,
+      resetCode: randomCode,
+    };
   } catch (error) {
     console.error("Error sending reset password email:", error);
     result = { result: false, msg: null, err: "Failed to send email" };
@@ -330,7 +284,7 @@ module.exports.findManyUsers = function (q, page, limit, options, callback) {
   limit = !Number.isNaN(limit) ? Number(limit) : limit;
   const queryMongo = q
     ? {
-        $or: _.map(["firstName", "lastName", "username", "email"], (e) => {
+        $or: _.map(["city", "name", "email"], (e) => {
           return { [e]: { $regex: `^${q}`, $options: "i" } };
         }),
       }
@@ -419,7 +373,7 @@ module.exports.findManyUsersById = function (users_id, options, callback) {
 };
 
 module.exports.findOneUser = function (tab_field, value, options, callback) {
-  var field_unique = ["username", "email"];
+  var field_unique = ["name", "email"];
   if (
     tab_field &&
     Array.isArray(tab_field) &&
@@ -621,6 +575,12 @@ module.exports.updateManyUsers = async function (
 };
 
 module.exports.deleteOneUser = function (user_id, options, callback) {
+  if (!mongoose.Types.ObjectId.isValid(user_id)) {
+    return callback({
+      msg: "L'identifiant de l'utilisateur n'est pas valide.",
+      type_error: "no-valid",
+    });
+  }
   User.findOneAndDelete({ _id: user_id })
     .then((value) => {
       try {

@@ -62,30 +62,39 @@ router.post(
 router.put(
   "/update_email",
   DatabaseMiddleware.checkConnexion,
+  passport.authenticate("jwt", { session: false }),
   UserController.updateEmail
 );
 
 router.put(
   "/update_user_image",
   DatabaseMiddleware.checkConnexion,
-  upload.single('profileImage'),
+  passport.authenticate("jwt", { session: false }),
+
+  upload.single("profileImage"),
   UserController.updateUserImage
 );
 
 router.put(
   "/update_password",
+  passport.authenticate("jwt", { session: false }),
+
   DatabaseMiddleware.checkConnexion,
   UserController.updatePassword
 );
 
 router.put(
   "/update_name",
+  passport.authenticate("jwt", { session: false }),
+
   DatabaseMiddleware.checkConnexion,
   UserController.updateName
 );
 
 router.put(
   "/update_city",
+  passport.authenticate("jwt", { session: false }),
+
   DatabaseMiddleware.checkConnexion,
   UserController.updateCity
 );

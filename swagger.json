@@ -34,10 +34,13 @@
               "type": "string",
               "description": "path to fin profile photos of user, have default value"
             },
-            "friends": {
-              "type": "string",
-              "description": "The user's friends"
-            },
+            "friends": [
+              {
+                "type": "string",
+                "description": "The user's friends",
+                "ref": "string"
+              }
+            ],
             "email": {
               "type": "string",
               "description": "The user's email",
@@ -69,7 +72,7 @@
               "default": "user"
             },
             "lastLogin": {
-              "type": "string",
+              "type": "Date",
               "description": "the last login of user",
               "default": "null"
             },
@@ -82,17 +85,46 @@
               "type": "Date",
               "description": "date of delate a user",
               "default": "null"
+            },
+            " verificationCode": {
+              "type": "String",
+              "default": "null"
+            },
+            " isVerified": {
+              "type": "Boolean",
+              "default": "false"
+            },
+            " resetCode": {
+              "type": " String",
+              "default": ""
+            }
+          }
+        },
+
+        "Login": {
+          "type": "object",
+          "required": ["username"],
+          "properties": {
+            "username": {
+              "type": "string",
+              "description": "The user's username",
+              "exemple": "johnDoe"
+            },
+            "password": {
+              "type": "string",
+              "description": "the user's password",
+              "exemple": "coucou"
             }
           }
         },
         "TodoItem": {
           "type": "object",
-          "required": ["titlr", "user_id"],
+          "required": ["title", "user_id"],
           "properties": {
             "user_id": {
               "type": "string",
               "description": "user's objectID of user create a toDoItem",
-              "exemple": "66a941d4d83285e45c8ea688"
+              "example": "66a941d4d83285e45c8ea688"
             },
             "title": {
               "type": "string",
@@ -111,20 +143,33 @@
             },
             "time": {
               "type": "string",
-              "description": "a time  of toDoItem",
+              "description": "a time of toDoItem",
               "example": "2024-01-01T00:00:00Z"
             },
             "outside": {
-              "type": "Boolean",
+              "type": "boolean",
               "description": "choise if the ToDoItem is outside or no to have a reminder of weather",
-              "default": "false"
+              "default": false
             },
             "weather": {
               "type": "object",
+              "description": "Weather information for outside tasks",
               "properties": {
-                "description": "weather description",
-                "temp": "number",
-                "icone": "string"
+                "description": {
+                  "type": "string",
+                  "description": "weather description",
+                  "example": "cloudy"
+                },
+                "temp": {
+                  "type": "number",
+                  "description": "temperature",
+                  "example": 22
+                },
+                "icone": {
+                  "type": "string",
+                  "description": "icon representing the weather",
+                  "example": "cloud"
+                }
               }
             },
             "status": {
@@ -135,17 +180,17 @@
               "type": "string",
               "format": "date-time",
               "description": "Date when the toDoItem was created",
-              "exemple": "2024-01-01T00:00:00Z"
+              "example": "2024-01-01T00:00:00Z"
             },
             "update_at": {
               "type": "string",
               "format": "date-time",
-              "description": "Date when the toDoItem was created",
-              "exemple": "2024-01-01T00:00:00Z"
+              "description": "Date when the toDoItem was last updated",
+              "example": "2024-01-01T00:00:00Z"
             }
           }
         },
-        "message": {
+        "Message": {
           "type": "object",
           "required": ["user_id"],
           "properties": {
@@ -175,6 +220,21 @@
               "exemple": "2024-01-01T00:00:00Z"
             }
           }
+        },
+        "Friends": {
+          "requester": {
+            "type": "String",
+            "ref": "User"
+          },
+          "recipient": {
+            "type": "String",
+            "ref": "User"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "accepted", "rejected"],
+            "default": "pending"
+          }
         }
       },
       "responses": {
@@ -197,63 +257,83 @@
               }
             }
           }
-        }
-      },
-      "ValidationError": {
-        "description": "Validation error",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "type_error": {
-                  "type": "string",
-                  "example": "validator"
-                },
-                "message": {
-                  "type": "string",
-                  "example": "Validation error"
+        },
+        "ValidationError": {
+          "description": "Validation error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type_error": {
+                    "type": "string",
+                    "example": "validator"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Validation error"
+                  }
                 }
               }
             }
           }
-        }
-      },
-      "DuplicateError": {
-        "description": "Duplicate entry",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "type_error": {
-                  "type": "string",
-                  "example": "duplicate"
-                },
-                "message": {
-                  "type": "string",
-                  "example": "Duplicate entry"
+        },
+        "DuplicateError": {
+          "description": "Duplicate entry",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type_error": {
+                    "type": "string",
+                    "example": "duplicate"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Duplicate entry"
+                  }
                 }
               }
             }
           }
-        }
-      },
+        },
+        "RequestNotValide": {
+          "description": "request params no valid",
+          "content": {
+            "application/json": {
+              "schemas": {
+                "type": "object",
+                "properties": {
+                  "type_error": {
+                    "type": "string",
+                    "exemple": "no-valid"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "exemple": "request not valid"
+                  }
+                }
+              }
+            }
+          }
+        },
 
-      "ErrorLogin": {
-        "description": "username or password are false",
-        "content": {
-          "application/json": {
-            "schemas": {
-              "type": "object",
-              "properties": {
-                "type_error": {
-                  "type": "string",
-                  "exemple": "no-valid"
-                },
-                "msg": {
-                  "type": "string",
-                  "exemple": "request not valid"
+        "ErrorLogin": {
+          "description": "username or password are false",
+          "content": {
+            "application/json": {
+              "schemas": {
+                "type": "object",
+                "properties": {
+                  "type_error": {
+                    "type": "string",
+                    "exemple": "no-valid"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "exemple": "request not valid"
+                  }
                 }
               }
             }
@@ -261,19 +341,32 @@
         }
       }
     },
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
 
     "tags": [
+      {
+        "name": "Authentification",
+        "description": "Operation about Login"
+      },
       {
         "name": "User",
         "description": "Operations about user"
       },
       {
-        "name": "Login",
-        "description": "Operations about authentification"
+        "name": "TodoItem",
+        "description": "Operations about TodoItem"
       },
       {
-        "name": "Logout",
-        "description": "Operations about deconnection"
+        "name": "Friends",
+        "description": "Operations about Friends"
+      },
+      {
+        "name": "Message",
+        "description": "Operations about Message"
       }
     ]
   },

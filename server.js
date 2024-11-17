@@ -15,21 +15,29 @@ const weatherRoutes = require("./routes/weatherRoutes");
 const landingEmailRoutes = require("./routes/landingEmailRoutes");
 require("dotenv").config();
 
-// pour etablir la connection entre back et front (cors policy)
-const cors = require("cors");
+const swaggerJSDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+
 // Création de notre application express.js
 const app = express();
-app.use(cors());
+
 // Démarrage de la database
 require("./utils/database");
 
+// pour etablir la connection entre back et front (cors policy)
+const cors = require("cors");
+
+app.use(cors());
+
+//configuration Swagger
+const swaggerOptions = require('./swagger.json')
+const swaggerDocs = swaggerJSDoc(swaggerOptions)
+app.use('/api-docs', swaggerUi.serve,swaggerUi.setup(swaggerDocs))
 // ajout de module de login
 const passport = require("./utils/passport");
 /*  passport init  */
 app.use(passport.initialize());
 // app.use(passort.session())
-
-// Déclaration des controllers pour l'utilisateur
 
 // Déclaration des middlewares
 const LoggerMiddleware = require("./middlewares/logger");
@@ -37,9 +45,6 @@ const LoggerMiddleware = require("./middlewares/logger");
 // Déclaration des middlewares à express
 app.use(bodyParser.json(), LoggerMiddleware.addLogger);
 
-/*--------------------- Création des routes (User - Utilisateur) ---------------------*/
-
-// création du endpoint /login pour connecter un utilisateur
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

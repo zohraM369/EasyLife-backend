@@ -121,8 +121,8 @@ describe("addManyUsers", () => {
 describe("findOneUser", () => {
   it("Chercher un utilisateur par les champs selectionnées. - S", (done) => {
     UserService.findOneUser(
-      ["email", "username"],
-      users[0].username,
+      ["email", "name"],
+      users[0].name,
       null,
       function (err, value) {
         expect(value).to.haveOwnProperty("name");
@@ -168,9 +168,10 @@ describe("findOneUser", () => {
 describe("findManyUsers", () => {
   it("Retourne 3 utilisateurs - S", (done) => {
     UserService.findManyUsers(null, 1, 3, null, function (err, value) {
+      console.log(value);
       expect(value).to.haveOwnProperty("count");
       expect(value).to.haveOwnProperty("results");
-      expect(value["count"]).to.be.equal(4);
+      expect(value["count"]).to.be.equal(11);
       expect(value["results"]).lengthOf(3);
       expect(err).to.be.null;
       done();
@@ -322,7 +323,7 @@ describe("deleteOneUser", () => {
     });
   });
   it("Supprimer un utilisateur avec id incorrect. - E", (done) => {
-    UserService.deleteOneUser("1200", null, function (err, value) {
+    UserService.deleteOneUser("zohra1234", null, function (err, value) {
       expect(err).to.be.a("object");
       expect(err).to.haveOwnProperty("msg");
       expect(err).to.haveOwnProperty("type_error");

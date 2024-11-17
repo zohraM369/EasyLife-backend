@@ -1,10 +1,11 @@
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
-
+const UserSchema = require("./User");
+const User = mongoose.model("User", UserSchema);
 const TodoItemSchema = mongoose.Schema({
   user_id: {
     type: ObjectId,
-    ref: "User",
+    ref: User,
   },
   title: {
     type: String,
@@ -13,7 +14,7 @@ const TodoItemSchema = mongoose.Schema({
   description: {
     type: String,
   },
-  team: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  team: [{ type: mongoose.Schema.Types.ObjectId, ref: User }],
   type: {
     type: String,
   },

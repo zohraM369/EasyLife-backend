@@ -8,8 +8,8 @@ var TodoItem = mongoose.model("TodoItem", TodoItemSchema);
 
 module.exports.addOneTodoItem = async function (req, res) {
   try {
-    let new_todoitem = new TodoItem(req.body);
-    await new_todoitem.save();
+    await TodoItemService.addOneTodoItem(req.body);
+
     res.json({ msg: "Todo ajouté avec succés !" });
   } catch (e) {
     console.log(e);
@@ -19,16 +19,9 @@ module.exports.addOneTodoItem = async function (req, res) {
 
 module.exports.removeTeamMemberFromTask = async function (req, res) {
   try {
-    const { todoId, userId } = req.body;
-
-    let updatedTodoItem = await TodoItem.findByIdAndUpdate(todoId, {
-      $pull: { team: userId },
-    });
-
-    if (!updatedTodoItem) {
-      return res.status(404).json({ error: "TodoItem not found" });
-    }
-
+    const updatedTodoItem = await TodoItemService.removeTeamMemberFromTask(
+      req.body
+    );
     res.json({ msg: "ID removed from team successfully!", updatedTodoItem });
   } catch (e) {
     console.log(e);
@@ -38,15 +31,7 @@ module.exports.removeTeamMemberFromTask = async function (req, res) {
 
 module.exports.addTeamMemberToTask = async function (req, res) {
   try {
-    console.log("Backend data:", req.body);
-
-    const { todoItemId, friendId } = req.body;
-
-    const updatedTodoItem = await TodoItem.findByIdAndUpdate(
-      todoItemId,
-      { $push: { team: friendId } },
-      { new: true, useFindAndModify: false }
-    );
+    const updatedTodoItem = await TodoItemService.addTeamMemberToTask(req.body);
 
     if (updatedTodoItem) {
       res.json({ msg: "Friend ID added successfully!", updatedTodoItem });
@@ -139,11 +124,8 @@ module.exports.findOneTodoItemById = function (req, res) {
 
 module.exports.findTodoItemsByUserId = async function (req, res) {
   try {
-    const data = await TodoItem.find({
-      $or: [{ user_id: req.params.id }, { team: req.params.id }],
-    })
-      .populate("team")
-      .populate("user_id");
+    let data = await TodoItemService.findTodoItemsByUserId(req.params.id);
+    console.log(data);
     res.send(data);
   } catch (error) {
     console.error(error);
